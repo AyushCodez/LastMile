@@ -1,11 +1,13 @@
 syntax = "proto3";
 package lastmile.driver;
+option java_package = "lastmile.driver";
+option java_multiple_files = true;
 import "google/protobuf/timestamp.proto";
 import "common.proto";
 
 service DriverService {
   rpc RegisterDriver(RegisterDriverRequest) returns (DriverInfo);
-  rpc RegisterRoute(RegisterRouteRequest) returns (RouteResponse);
+  rpc RegisterRoute(RegisterRouteRequest) returns (Route);
   rpc UpdatePickupStatus(UpdatePickupRequest) returns (Ack);
   rpc GetDriver(DriverId) returns (DriverInfo);
 }

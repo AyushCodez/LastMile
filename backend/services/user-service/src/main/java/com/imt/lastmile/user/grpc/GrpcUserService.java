@@ -11,7 +11,7 @@ import lastmile.user.CreateUserRequest;
 import lastmile.user.CreateUserResponse;
 import lastmile.user.Credentials;
 import lastmile.user.AuthResponse;
-import lastmile.user.UserId;
+import lastmile.UserId;
 import lastmile.user.UserProfile;
 import org.springframework.stereotype.Service;
 

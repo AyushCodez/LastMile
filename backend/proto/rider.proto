@@ -1,5 +1,7 @@
 syntax = "proto3";
 package lastmile.rider;
+option java_package = "lastmile.rider";
+option java_multiple_files = true;
 import "google/protobuf/timestamp.proto";
 import "common.proto";
 
@@ -14,7 +16,7 @@ message RegisterRideIntentRequest {
   google.protobuf.Timestamp arrival_time = 3;
   string destination = 4;
   // optional: preferred driver types, max wait minutes, party_size
-  int32 party_size = 4;
+  int32 party_size = 5;
 }
 
 message RideIntentResponse { string intent_id = 1; }

@@ -10,6 +10,7 @@
 	</parent>
 	<packaging>pom</packaging>
 	<modules>
+		<module>services/proto-common</module>
 		<module>services/user-service</module>
 		<module>services/driver-service</module>
 		<module>services/rider-service</module>
@@ -62,6 +63,15 @@
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
+
+	<dependencies>
+		<!-- Provide javax.annotation.Generated for generated gRPC/protobuf classes -->
+		<dependency>
+			<groupId>javax.annotation</groupId>
+			<artifactId>javax.annotation-api</artifactId>
+			<version>1.3.2</version>
+		</dependency>
+	</dependencies>
 	<build>
 		<pluginManagement>
 			<plugins>
@@ -74,6 +84,28 @@
 						<protocArtifact>com.google.protobuf:protoc:${protobuf.version}:exe:${os.detected.classifier}</protocArtifact>
 						<pluginId>grpc-java</pluginId>
 						<pluginArtifact>io.grpc:protoc-gen-grpc-java:${grpc.version}:exe:${os.detected.classifier}</pluginArtifact>
+					</configuration>
+				</plugin>
+				<!-- Disable spring-boot repackage for proto-common (no main class) -->
+				<plugin>
+					<groupId>org.springframework.boot</groupId>
+					<artifactId>spring-boot-maven-plugin</artifactId>
+					<configuration>
+						<skip>true</skip>
+					</configuration>
+					<executions>
+						<execution><id>repackage</id><phase>none</phase></execution>
+					</executions>
+				</plugin>
+				<!-- Exclude .proto definition files from assembled service JARs (only generated Java needed) -->
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-jar-plugin</artifactId>
+					<version>3.4.2</version>
+					<configuration>
+						<excludes>
+							<exclude>**/*.proto</exclude>
+						</excludes>
 					</configuration>
 				</plugin>
 			</plugins>
@@ -92,6 +124,27 @@
 						<goals>
 							<goal>detect</goal>
 						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<!-- Ensure leftover protoc-dependencies temporary directories are removed early to avoid protobuf plugin cleanup failures -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-antrun-plugin</artifactId>
+				<version>3.1.0</version>
+				<executions>
+					<execution>
+						<id>remove-protoc-deps</id>
+						<phase>initialize</phase>
+						<goals>
+							<goal>run</goal>
+						</goals>
+						<configuration>
+							<target>
+								<echo message="Removing stale protoc-dependencies directory if present..." />
+								<delete dir="${project.build.directory}/protoc-dependencies" failonerror="false" />
+							</target>
+						</configuration>
 					</execution>
 				</executions>
 			</plugin>

@@ -8,6 +8,15 @@
 		<version>3.5.7</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
+	<modules>
+		<module>services/user-service</module>
+		<module>services/driver-service</module>
+		<module>services/rider-service</module>
+		<module>services/location-service</module>
+		<module>services/station-service</module>
+		<module>services/matching-service</module>
+		<module>services/trip-service</module>
+  	</modules>
 	<groupId>com.imt</groupId>
 	<artifactId>lastmile</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
@@ -28,46 +37,57 @@
 	</scm>
 	<properties>
 		<java.version>17</java.version>
+		<protobuf.version>3.25.1</protobuf.version>
+    	<grpc.version>1.65.1</grpc.version>
 	</properties>
-	<dependencies>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-data-jpa</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-data-redis</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-security</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-web</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-websocket</artifactId>
-		</dependency>
-
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-test</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.security</groupId>
-			<artifactId>spring-security-test</artifactId>
-			<scope>test</scope>
-		</dependency>
-	</dependencies>
 
 	<build>
+		<pluginManagement>
+			<plugins>
+				<!-- Java code generator -->
+				<plugin>
+				<groupId>com.google.protobuf</groupId>
+				<artifactId>protobuf-maven-plugin</artifactId>
+				<version>0.6.1</version>
+				<executions>
+					<execution>
+					<id>protobuf</id>
+					<phase>generate-sources</phase>
+					<goals>
+						<goal>compile</goal>
+						<goal>compile-custom</goal>
+					</goals>
+					<configuration>
+						<protocArtifact>
+						com.google.protobuf:protoc:${protobuf.version}:exe:${os.detected.classifier}
+						</protocArtifact>
+						<pluginId>grpc-java</pluginId>
+						<pluginArtifact>
+						io.grpc:protoc-gen-grpc-java:${grpc.version}:exe:${os.detected.classifier}
+						</pluginArtifact>
+						<protoSourceRoot>proto</protoSourceRoot>
+					</configuration>
+					</execution>
+				</executions>
+				</plugin>
+			</plugins>
+		</pluginManagement>
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>kr.motd.maven</groupId>
+				<artifactId>os-maven-plugin</artifactId>
+				<version>1.7.0</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>detect</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>

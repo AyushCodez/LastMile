@@ -1,0 +1,40 @@
+syntax = "proto3";
+package lastmile.matching;
+import "google/protobuf/timestamp.proto";
+import "common.proto";
+
+service MatchingService {
+  // For admin/testing: force a match attempt for a station when driver arrives.
+  rpc TriggerMatch(TriggerMatchRequest) returns (MatchResponse);
+
+  // (optional) streaming match events for UI
+  rpc SubscribeMatches(SubscribeRequest) returns (stream MatchEvent);
+}
+
+message TriggerMatchRequest {
+  string station_id = 1;
+  string driver_id = 2;
+  google.protobuf.Timestamp arrival_time = 3;
+  string driver_destination = 4;
+  int32 seats_available = 5;
+}
+
+message MatchResult {
+  string trip_id = 1;
+  string driver_id = 2;
+  repeated string rider_ids = 3;
+}
+
+message MatchResponse {
+  bool matched = 1;
+  repeated MatchResult results = 2;
+  string msg = 3;
+}
+
+message MatchEvent {
+  string event_id = 1;
+  string station_id = 2;
+  MatchResult result = 3;
+}
+
+message SubscribeRequest { string client_id = 1; }

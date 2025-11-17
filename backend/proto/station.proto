@@ -1,0 +1,13 @@
+syntax = "proto3";
+package lastmile.station;
+import "common.proto";
+
+service StationService {
+  rpc GetStation(StationId) returns (Station);
+  rpc ListNearbyPlaces(StationId) returns (NearbyPlacesResponse);
+}
+
+message StationId { string id = 1; }
+message NearbyPlacesResponse {
+  repeated string place_ids = 1;
+}

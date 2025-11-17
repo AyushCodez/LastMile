@@ -1,0 +1,22 @@
+syntax = "proto3";
+package lastmile.location;
+import "google/protobuf/timestamp.proto";
+import "common.proto";
+
+service LocationService {
+  // Client streaming to send continuous location updates
+  rpc StreamDriverLocation(stream DriverLocation) returns (Ack);
+
+  // Query current location
+  rpc GetDriverLocation(DriverId) returns (DriverLocation);
+}
+
+message DriverLocation {
+  string driver_id = 1;
+  GeoPoint pt = 2;
+  google.protobuf.Timestamp ts = 3;
+  double speed = 4;
+}
+
+message DriverId { string id = 1; }
+message Ack { bool ok = 1; string msg = 2; }

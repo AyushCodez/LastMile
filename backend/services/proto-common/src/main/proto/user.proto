@@ -7,27 +7,11 @@ import "common.proto";
 
 service UserService {
   rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
-  rpc Authenticate(Credentials) returns (AuthResponse); // returns JWT
+  rpc Authenticate(Credentials) returns (AuthResponse);
   rpc GetUser(UserId) returns (UserProfile);
 }
-
-message CreateUserRequest {
-  string name = 1;
-  string email = 2;
-  string password = 3; // in production use hashed over TLS
-  enum Role { RIDER = 0; DRIVER = 1; }
-  Role role = 4;
-}
-
+message CreateUserRequest { string name = 1; string email = 2; string password = 3; enum Role { RIDER = 0; DRIVER = 1; } Role role = 4; }
 message CreateUserResponse { string id = 1; }
-
 message Credentials { string email = 1; string password = 2; }
 message AuthResponse { string jwt = 1; google.protobuf.Timestamp expires = 2; }
-
-message UserProfile {
-  string id = 1;
-  string name = 2;
-  string email = 3;
-  string role = 4;
-  repeated string metadata = 5;
-}
+message UserProfile { string id = 1; string name = 2; string email = 3; string role = 4; repeated string metadata = 5; }

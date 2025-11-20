@@ -2,7 +2,7 @@ syntax = "proto3";
 package lastmile.notification;
 option java_package = "lastmile.notification";
 option java_multiple_files = true;
-import "google/protobuf/timestamp.proto";
+// Removed unused timestamp import
 
 service NotificationService {
   rpc Notify(Notification) returns (Ack);
@@ -10,11 +10,10 @@ service NotificationService {
 }
 
 message Notification {
-  string user_id = 1; 
+  string user_id = 1;
   string title = 2;
   string body = 3;
   map<string,string> metadata = 4;
 }
-
 message SubscribeRequest { string user_id = 1; }
 message Ack { bool ok = 1; }

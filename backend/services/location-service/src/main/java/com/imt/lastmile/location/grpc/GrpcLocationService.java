@@ -2,7 +2,7 @@ package com.imt.lastmile.location.grpc;
 
 import com.imt.lastmile.location.domain.DriverLocationEntity;
 import com.imt.lastmile.location.repo.DriverLocationRepository;
-import com.google.protobuf.Timestamp;
+// Using vendored timestamp proto (TimestampProto.Timestamp)
 import io.grpc.stub.StreamObserver;
 import java.time.Instant;
 import lastmile.location.Ack;
@@ -43,7 +43,7 @@ public class GrpcLocationService extends LocationServiceGrpc.LocationServiceImpl
     responseObserver.onNext(DriverLocation.newBuilder()
       .setDriverId(e.getDriverId())
       .setPt(lastmile.GeoPoint.newBuilder().setLat(e.getLat()).setLng(e.getLng()).build())
-      .setTs(Timestamp.newBuilder().setSeconds(e.getTs().getEpochSecond()).build())
+  .setTs(com.google.protobuf.TimestampProto.Timestamp.newBuilder().setSeconds(e.getTs().getEpochSecond()).build())
       .setSpeed(e.getSpeed() == null ? 0.0 : e.getSpeed())
       .build());
     responseObserver.onCompleted();

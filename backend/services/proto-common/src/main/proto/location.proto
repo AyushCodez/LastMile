@@ -16,6 +16,5 @@ message DriverLocation {
   google.protobuf.Timestamp ts = 3;
   double speed = 4;
 }
-
 message DriverId { string id = 1; }
 message Ack { bool ok = 1; string msg = 2; }

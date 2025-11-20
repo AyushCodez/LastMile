@@ -20,6 +20,11 @@
 			<version>${project.version}</version>
 		</dependency>
 		<dependency>
+			<groupId>com.imt</groupId>
+			<artifactId>security-common</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter</artifactId>
 		</dependency>
@@ -73,6 +78,18 @@
 			<groupId>org.springframework.security</groupId>
 			<artifactId>spring-security-crypto</artifactId>
 			<version>6.3.5</version>
+		</dependency>
+		<!-- Testing -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-core</artifactId>
+			<version>5.12.0</version>
+			<scope>test</scope>
 		</dependency>
 	</dependencies>
 	<build>

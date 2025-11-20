@@ -2,7 +2,6 @@ package com.imt.lastmile.user.grpc;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
-import com.google.protobuf.Timestamp;
 import com.imt.lastmile.user.domain.User;
 import com.imt.lastmile.user.repo.UserRepository;
 import io.grpc.stub.StreamObserver;
@@ -56,7 +55,7 @@ public class GrpcUserService extends UserServiceGrpc.UserServiceImplBase {
     String token = JWT.create().withSubject(opt.get().getId()).withExpiresAt(java.util.Date.from(exp)).sign(alg);
     responseObserver.onNext(AuthResponse.newBuilder()
       .setJwt(token)
-      .setExpires(Timestamp.newBuilder().setSeconds(exp.getEpochSecond()).build())
+  .setExpires(com.google.protobuf.TimestampProto.Timestamp.newBuilder().setSeconds(exp.getEpochSecond()).build())
       .build());
     responseObserver.onCompleted();
   }

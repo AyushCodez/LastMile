@@ -2,7 +2,7 @@ package com.imt.lastmile.trip.grpc;
 
 import com.imt.lastmile.trip.domain.Trip;
 import com.imt.lastmile.trip.repo.TripRepository;
-import com.google.protobuf.Timestamp;
+// Using vendored timestamp (TimestampProto.Timestamp)
 import io.grpc.stub.StreamObserver;
 import java.time.Instant;
 import lastmile.trip.CreateTripRequest;
@@ -52,7 +52,7 @@ public class GrpcTripService extends TripServiceGrpc.TripServiceImplBase {
       .setDriverId(t.getDriverId())
       .addAllRiderIds(t.getRiderUserIds())
       .setStatus(t.getStatus())
-      .setScheduledTime(Timestamp.newBuilder().setSeconds(t.getScheduledTime().getEpochSecond()).build())
+  .setScheduledTime(com.google.protobuf.TimestampProto.Timestamp.newBuilder().setSeconds(t.getScheduledTime().getEpochSecond()).build())
       .build();
   }
 }

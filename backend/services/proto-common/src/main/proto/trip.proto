@@ -2,29 +2,15 @@ syntax = "proto3";
 package lastmile.trip;
 option java_package = "lastmile.trip";
 option java_multiple_files = true;
-import "google/protobuf/timestamp.proto";
-import "common.proto";
+import "google/protobuf/timestamp.proto"; // Removed unused common.proto
 
 service TripService {
   rpc CreateTrip(CreateTripRequest) returns (Trip);
   rpc UpdateTripStatus(UpdateTripRequest) returns (Trip);
   rpc GetTrip(TripId) returns (Trip);
 }
-
 message CreateTripRequest {
-  string driver_id = 1;
-  repeated string rider_ids = 2;
-  string station_id = 3;
-  string destination = 4;
-  google.protobuf.Timestamp scheduled_time = 5;
-}
-
-message Trip {
-  string trip_id = 1;
-  string driver_id = 2;
-  repeated string rider_ids = 3;
-  string status = 4; // SCHEDULED, ACTIVE, COMPLETED
-  google.protobuf.Timestamp scheduled_time = 5;
-}
+  string driver_id = 1; repeated string rider_ids = 2; string station_id = 3; string destination = 4; google.protobuf.Timestamp scheduled_time = 5; }
+message Trip { string trip_id = 1; string driver_id = 2; repeated string rider_ids = 3; string status = 4; google.protobuf.Timestamp scheduled_time = 5; }
 message UpdateTripRequest { string trip_id = 1; string status = 2; }
 message TripId { string id = 1; }

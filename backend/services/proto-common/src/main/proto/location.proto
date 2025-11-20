@@ -1,0 +1,21 @@
+syntax = "proto3";
+package lastmile.location;
+option java_package = "lastmile.location";
+option java_multiple_files = true;
+import "google/protobuf/timestamp.proto";
+import "common.proto";
+
+service LocationService {
+  rpc StreamDriverLocation(stream DriverLocation) returns (Ack);
+  rpc GetDriverLocation(DriverId) returns (DriverLocation);
+}
+
+message DriverLocation {
+  string driver_id = 1;
+  GeoPoint pt = 2;
+  google.protobuf.Timestamp ts = 3;
+  double speed = 4;
+}
+
+message DriverId { string id = 1; }
+message Ack { bool ok = 1; string msg = 2; }

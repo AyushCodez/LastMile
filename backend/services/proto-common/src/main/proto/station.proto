@@ -1,0 +1,15 @@
+syntax = "proto3";
+package lastmile.station;
+option java_package = "lastmile.station";
+option java_multiple_files = true;
+import "common.proto";
+
+service StationService {
+  rpc GetStation(StationId) returns (Station);
+  rpc ListNearbyPlaces(StationId) returns (NearbyPlacesResponse);
+}
+
+message StationId { string id = 1; }
+message NearbyPlacesResponse {
+  repeated string place_ids = 1;
+}

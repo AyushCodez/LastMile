@@ -2,6 +2,7 @@ package com.imt.lastmile.user.grpc;
 
 import com.auth0.jwt.algorithms.Algorithm;
 import com.imt.lastmile.user.domain.User;
+import com.imt.lastmile.security.JwtProperties;
 import com.imt.lastmile.user.repo.UserRepository;
 import lastmile.user.AuthResponse;
 import lastmile.user.Credentials;
@@ -22,13 +23,19 @@ class GrpcUserServiceTest {
   private BCryptPasswordEncoder encoder;
   private Algorithm alg;
   private GrpcUserService service;
+  private JwtProperties jwtProps;
 
   @BeforeEach
   void setup() {
     repo = Mockito.mock(UserRepository.class);
     encoder = new BCryptPasswordEncoder();
-    alg = Algorithm.HMAC256("test-secret");
-    service = new GrpcUserService(repo, encoder, alg, 15L);
+  alg = Algorithm.HMAC256("test-secret");
+  jwtProps = new JwtProperties();
+  jwtProps.setIssuer("test-issuer");
+  jwtProps.setAudience("test-audience");
+  jwtProps.setSecret("test-secret");
+  jwtProps.setExpiresMinutes(15);
+  service = new GrpcUserService(repo, encoder, alg, 15L, jwtProps);
   }
 
   @Test

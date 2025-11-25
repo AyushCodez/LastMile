@@ -5,87 +5,25 @@
 Prerequisites:
 
 Database setup (default connection is to a local database named `lastmile`):
-	- File: `backend/db/schema.sql`
-	- `DB_URL` (default: `jdbc:postgresql://localhost:5432/lastmile`)
-	- `DB_USER` (default: `postgres`)
-	- `DB_PASSWORD` (default: `postgres`)
-	- Optional roles script: `backend/db/create_roles.sql`
+	# LastMile
 
-Build all services:
-```bash
-cd backend
-mvn -DskipTests clean install
-```
+	LastMile is a small microservice suite that demonstrates a last-mile trip matching system using Spring Boot and gRPC. It includes services for users, drivers, riders, trips, locations, stations, notifications, and a matching engine.
 
-## JWT authentication
+	This repository contains the full backend (multi-module Maven project) and a minimal frontend placeholder. The codebase focuses on deterministic builds, gRPC inter-service communication, JWT-based authentication, and example matching logic.
 
-We added username/password authentication with JWT issuance in the `user-service` via gRPC:
+	Key documentation (split for clarity):
 
-- Create user: `UserService.CreateUser`
-- Authenticate (login): `UserService.Authenticate` → returns a signed JWT and expiry
-- Protected calls: All other `user-service` gRPC methods require `Authorization: Bearer <token>` metadata
+	- `CONFIGURATION.md` — what to set up before running (env vars, profiles, secrets, local config files).
+	- `RUNNING.md` — step-by-step instructions to run the project locally and how the services start.
+	- `SERVICES.md` — short description of each service and what it does (ports, responsibilities).
 
-Configuration (override via env vars or an `.env.local` file):
+	For development you likely want to read `CONFIGURATION.md` first, then follow `RUNNING.md`.
 
-- `JWT_SECRET` (no production default – must be strong, >=32 chars)
-- `JWT_EXPIRES_MINUTES` (default `60`): token lifetime in minutes
-- `JWT_ISSUER` (default `lastmile-cloud`): issuer claim included & verified
-- `JWT_AUDIENCE` (default `lastmile-users`): audience claim included & verified
+	If you want a quick summary of the repository layout and build, see the top-level `backend/` folder (Maven multi-module). For protobuf generation notes, check `backend/services/proto-common`.
 
-The `user-service` secures passwords using BCrypt and validates on login. Tokens are signed with HS256 (Auth0 java-jwt) and enforced by a global gRPC server interceptor.
+	For security & JWT details, see `CONFIGURATION.md` (these details are intentionally separated from the main README).
 
-Example usage (pseudocode):
-
-1) Create user
-```
-rpc CreateUser(CreateUserRequest) returns (CreateUserResponse)
-// name, email, password, role (RIDER|DRIVER)
-```
-
-2) Login to get JWT
-```
-rpc Authenticate(Credentials) returns (AuthResponse)
-// set jwt = AuthResponse.jwt
-```
-
-3) Call protected APIs with metadata
-```
-Authorization: Bearer <jwt>
-```
-
-Notes:
-- For production, you MUST set a strong `JWT_SECRET` via environment variable (>=32 random characters). The app will fail fast if a weak/default secret is used while the `prod` profile is active.
-- Issuer & audience are verified by a shared `JWTVerifier` bean.
-- Other services can adopt the same pattern by injecting `JWTVerifier` and `Algorithm` from the shared `security-common` module.
-
-### Local environment & secrets
-
-1. Copy `.env.example` to `.env.local` and customize for your user and password.
-2. Export variables or use a tool like `direnv` / docker-compose to load them.
-3. `.env.local` is ignored by git so each developer can keep personal DB credentials.
-
-Example:
-```bash
-cp .env.example .env.local
-openssl rand -hex 32 # generate secret
-echo "JWT_SECRET=<paste_here>" >> .env.local
-```
-
-Then run:
-```bash
-source .env.local && cd backend && ./mvnw spring-boot:run -pl services/user-service
-```
-
-### Database configuration (development vs production)
-
-Profiles:
-- Development (default): uses `application.properties` with safe local defaults; can spin up Postgres via docker-compose.
-- Production: activate with `SPRING_PROFILES_ACTIVE=prod` → loads `application-prod.properties` with mandatory env-driven datasource settings and no insecure fallbacks.
-
-Environment variables (required in prod):
-- `DB_URL` (e.g. `jdbc:postgresql://prod-host:5432/lastmile`)
-- `DB_USER` / `DB_PASSWORD` (least-privilege role; avoid superuser)
-- `JWT_SECRET` (strong secret; app fails fast if weak)
+	Happy hacking — follow the docs above to get started.
 - `JWT_ISSUER`, `JWT_AUDIENCE` (optional but recommended for claim enforcement)
 - `DB_POOL_SIZE` (tune based on connection limits; default 10)
 

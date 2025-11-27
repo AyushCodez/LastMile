@@ -2,6 +2,7 @@ package com.imt.lastmile.user.grpc;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
+import com.imt.lastmile.security.JwtProperties;
 import com.imt.lastmile.user.domain.User;
 import com.imt.lastmile.user.repo.UserRepository;
 import io.grpc.stub.StreamObserver;
@@ -24,12 +25,14 @@ public class GrpcUserService extends UserServiceGrpc.UserServiceImplBase {
   private final PasswordEncoder passwordEncoder;
   private final Algorithm alg;
   private final long expiresMinutes;
+  private final JwtProperties jwtProps;
 
-  public GrpcUserService(UserRepository repo, PasswordEncoder passwordEncoder, Algorithm alg, Long expiresMinutes) {
+  public GrpcUserService(UserRepository repo, PasswordEncoder passwordEncoder, Algorithm alg, Long expiresMinutes, JwtProperties jwtProps) {
     this.repo = repo;
     this.passwordEncoder = passwordEncoder;
     this.alg = alg;
     this.expiresMinutes = expiresMinutes;
+    this.jwtProps = jwtProps;
   }
 
   @Override
@@ -52,7 +55,10 @@ public class GrpcUserService extends UserServiceGrpc.UserServiceImplBase {
       return;
     }
   Instant exp = Instant.now().plus(expiresMinutes, ChronoUnit.MINUTES);
-    String token = JWT.create().withSubject(opt.get().getId()).withExpiresAt(java.util.Date.from(exp)).sign(alg);
+  var jwtBuilder = JWT.create().withSubject(opt.get().getId()).withExpiresAt(java.util.Date.from(exp));
+  if (jwtProps.getIssuer() != null) jwtBuilder.withIssuer(jwtProps.getIssuer());
+  if (jwtProps.getAudience() != null) jwtBuilder.withAudience(jwtProps.getAudience());
+  String token = jwtBuilder.sign(alg);
     responseObserver.onNext(AuthResponse.newBuilder()
       .setJwt(token)
   .setExpires(com.google.protobuf.TimestampProto.Timestamp.newBuilder().setSeconds(exp.getEpochSecond()).build())

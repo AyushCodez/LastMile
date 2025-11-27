@@ -1,7 +1,6 @@
 package com.imt.lastmile.user.security;
 
 import com.auth0.jwt.JWTVerifier;
-import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import io.grpc.*;
 import net.devh.boot.grpc.server.interceptor.GrpcGlobalServerInterceptor;
@@ -15,8 +14,8 @@ public class JwtServerInterceptor implements ServerInterceptor {
   private static final Metadata.Key<String> AUTHORIZATION = Metadata.Key.of("authorization", ASCII_STRING_MARSHALLER);
   private final JWTVerifier verifier;
 
-  public JwtServerInterceptor(Algorithm algorithm) {
-    this.verifier = com.auth0.jwt.JWT.require(algorithm).build();
+  public JwtServerInterceptor(JWTVerifier verifier) {
+    this.verifier = verifier;
   }
 
   @Override

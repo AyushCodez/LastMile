@@ -1,0 +1,19 @@
+# Copy to application-local.properties (gitignored) for local development without Docker.
+# Ensure you have a local Postgres running (e.g., installed via brew) and a database created.
+# Activate with: SPRING_PROFILES_ACTIVE=local
+
+spring.datasource.url=jdbc:postgresql://localhost:5432/lastmile
+spring.datasource.username=your_local_username
+spring.datasource.password=your_local_password
+spring.datasource.driver-class-name=org.postgresql.Driver
+spring.jpa.hibernate.ddl-auto=none
+spring.jpa.show-sql=true
+
+# Optional pool tuning for local
+spring.datasource.hikari.maximum-pool-size=5
+
+# JWT (local dev overrides) - choose a strong secret even locally
+jwt.secret=dev-local-secret-change-me
+jwt.expires.minutes=60
+jwt.issuer=lastmile-cloud
+jwt.audience=lastmile-users

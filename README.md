@@ -5,54 +5,61 @@
 Prerequisites:
 
 Database setup (default connection is to a local database named `lastmile`):
-	- File: `backend/db/schema.sql`
-	- `DB_URL` (default: `jdbc:postgresql://localhost:5432/lastmile`)
-	- `DB_USER` (default: `postgres`)
-	- `DB_PASSWORD` (default: `postgres`)
+	# LastMile
 
-Build all services:
+	LastMile is a small microservice suite that demonstrates a last-mile trip matching system using Spring Boot and gRPC. It includes services for users, drivers, riders, trips, locations, stations, notifications, and a matching engine.
+
+	This repository contains the full backend (multi-module Maven project) and a minimal frontend placeholder. The codebase focuses on deterministic builds, gRPC inter-service communication, JWT-based authentication, and example matching logic.
+
+	Key documentation (split for clarity):
+
+	- `CONFIGURATION.md` — what to set up before running (env vars, profiles, secrets, local config files).
+	- `RUNNING.md` — step-by-step instructions to run the project locally and how the services start.
+	- `SERVICES.md` — short description of each service and what it does (ports, responsibilities).
+
+	For development you likely want to read `CONFIGURATION.md` first, then follow `RUNNING.md`.
+
+	If you want a quick summary of the repository layout and build, see the top-level `backend/` folder (Maven multi-module). For protobuf generation notes, check `backend/services/proto-common`.
+
+	For security & JWT details, see `CONFIGURATION.md` (these details are intentionally separated from the main README).
+
+	Happy hacking — follow the docs above to get started.
+- `JWT_ISSUER`, `JWT_AUDIENCE` (optional but recommended for claim enforcement)
+- `DB_POOL_SIZE` (tune based on connection limits; default 10)
+
+### Running Postgres locally (no containers)
+
+Install PostgreSQL directly (macOS example):
 ```bash
-cd backend
-mvn -DskipTests clean install
+brew install postgresql@16
+brew services start postgresql@16
+```
+Create database & user (adjust username/password):
+```bash
+createuser --interactive your_local_username
+createdb lastmile
+psql -d lastmile -c "alter user your_local_username with password 'your_local_password';"
+psql -d lastmile -f backend/db/schema.sql
+```
+Optional role script example:
+```bash
+psql -d postgres -f backend/db/create_roles.sql
+```
+Local profile usage:
+1. Copy `backend/services/user-service/src/main/resources/application-local.properties.example` to `application-local.properties` and fill credentials.
+2. Run:
+```bash
+SPRING_PROFILES_ACTIVE=local ./mvnw -pl services/user-service spring-boot:run
 ```
 
-## JWT authentication
+### Production checklist
 
-We added username/password authentication with JWT issuance in the `user-service` via gRPC:
-
-- Create user: `UserService.CreateUser`
-- Authenticate (login): `UserService.Authenticate` → returns a signed JWT and expiry
-- Protected calls: All other `user-service` gRPC methods require `Authorization: Bearer <token>` metadata
-
-Configuration (override via env vars):
-
-- `JWT_SECRET` (default `change-me`): HMAC secret used to sign/verify tokens
-- `JWT_EXPIRES_MINUTES` (default `60`): token lifetime in minutes
-
-The `user-service` secures passwords using BCrypt and validates on login. Tokens are signed with HS256 (Auth0 java-jwt) and enforced by a global gRPC server interceptor.
-
-Example usage (pseudocode):
-
-1) Create user
-```
-rpc CreateUser(CreateUserRequest) returns (CreateUserResponse)
-// name, email, password, role (RIDER|DRIVER)
-```
-
-2) Login to get JWT
-```
-rpc Authenticate(Credentials) returns (AuthResponse)
-// set jwt = AuthResponse.jwt
-```
-
-3) Call protected APIs with metadata
-```
-Authorization: Bearer <jwt>
-```
-
-Notes:
-- For production, set a strong `JWT_SECRET` via environment variable.
-- Other services can adopt the same pattern by copying the interceptor and reading the same env vars.
+- Provide secrets via environment variables or a secrets manager (Kubernetes Secrets, AWS Parameter Store, etc.).
+- Use distinct DB roles per microservice with limited grants (select/insert/update only needed tables).
+- Enable SSL/TLS on the Postgres connection (`?sslmode=require`).
+- Rotate `JWT_SECRET` periodically (consider key versioning or move to asymmetric keys).
+- Monitor connection pool (Hikari metrics) and adjust `DB_POOL_SIZE`.
+- Back up the database (logical pg_dump or managed service automated backups).
 
 Run a service (example: user-service):
 ```bash

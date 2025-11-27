@@ -1,8 +1,9 @@
 package com.imt.lastmile.trip.grpc;
 
+import com.google.protobuf.TimestampProto;
+import com.google.protobuf.TimestampProto.Timestamp;
 import com.imt.lastmile.trip.domain.Trip;
 import com.imt.lastmile.trip.repo.TripRepository;
-// Using vendored timestamp (TimestampProto.Timestamp)
 import io.grpc.stub.StreamObserver;
 import java.time.Instant;
 import lastmile.trip.CreateTripRequest;
@@ -17,8 +18,16 @@ public class GrpcTripService extends TripServiceGrpc.TripServiceImplBase {
 
   @Override
   public void createTrip(CreateTripRequest request, StreamObserver<lastmile.trip.Trip> responseObserver) {
-    Instant sched = Instant.ofEpochSecond(request.getScheduledTime().getSeconds());
-    Trip t = new Trip(request.getDriverId(), request.getRiderIdsList(), request.getStationId(), request.getDestination(), sched);
+    Instant sched = request.hasScheduledDeparture()
+        ? Instant.ofEpochSecond(request.getScheduledDeparture().getSeconds(), request.getScheduledDeparture().getNanos())
+        : Instant.now();
+    Trip t = new Trip(
+        request.getDriverId(),
+        request.getRouteId(),
+        request.getStationAreaId(),
+        request.getDestinationAreaId(),
+        request.getRiderIdsList(),
+        sched);
     repo.save(t);
     responseObserver.onNext(toProto(t));
     responseObserver.onCompleted();
@@ -47,12 +56,23 @@ public class GrpcTripService extends TripServiceGrpc.TripServiceImplBase {
   }
 
   private lastmile.trip.Trip toProto(Trip t) {
-    return lastmile.trip.Trip.newBuilder()
-      .setTripId(t.getTripId())
-      .setDriverId(t.getDriverId())
-      .addAllRiderIds(t.getRiderUserIds())
-      .setStatus(t.getStatus())
-  .setScheduledTime(com.google.protobuf.TimestampProto.Timestamp.newBuilder().setSeconds(t.getScheduledTime().getEpochSecond()).build())
-      .build();
+    Timestamp departure = toTimestamp(t.getScheduledDeparture());
+    lastmile.trip.Trip.Builder builder = lastmile.trip.Trip.newBuilder()
+        .setTripId(t.getTripId())
+        .setDriverId(t.getDriverId())
+        .setRouteId(t.getRouteId() == null ? "" : t.getRouteId())
+        .setStationAreaId(t.getStationAreaId())
+        .setDestinationAreaId(t.getDestinationAreaId())
+        .setStatus(t.getStatus())
+        .setScheduledDeparture(departure)
+        .addAllRiderIds(t.getRiderUserIds());
+    return builder.build();
+  }
+
+  private Timestamp toTimestamp(Instant instant) {
+    return Timestamp.newBuilder()
+        .setSeconds(instant.getEpochSecond())
+        .setNanos(instant.getNano())
+        .build();
   }
 }

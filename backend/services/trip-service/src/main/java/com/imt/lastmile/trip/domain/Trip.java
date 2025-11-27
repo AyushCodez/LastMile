@@ -16,14 +16,20 @@ public class Trip {
   @Column(name = "driver_id", length = 36, nullable = false)
   private String driverId;
 
+  @Column(name = "route_id", length = 36)
+  private String routeId;
+
+  @Column(name = "station_area_id", length = 64, nullable = false)
+  private String stationAreaId;
+
+  @Column(name = "destination_area_id", length = 64, nullable = false)
+  private String destinationAreaId;
+
   @Column(name = "status", nullable = false)
   private String status; // SCHEDULED, ACTIVE, COMPLETED
 
-  @Column(name = "scheduled_time", nullable = false)
-  private Instant scheduledTime;
-
-  @Column(name = "destination", nullable = false)
-  private String destination;
+  @Column(name = "scheduled_departure", nullable = false)
+  private Instant scheduledDeparture;
 
   @ElementCollection
   @CollectionTable(name = "trip_riders", joinColumns = @JoinColumn(name = "trip_id"))
@@ -32,20 +38,24 @@ public class Trip {
 
   protected Trip() {}
 
-  public Trip(String driverId, List<String> riderUserIds, String stationId, String destination, Instant scheduledTime) {
+  public Trip(String driverId, String routeId, String stationAreaId, String destinationAreaId, List<String> riderUserIds, Instant scheduledDeparture) {
     this.tripId = UUID.randomUUID().toString();
     this.driverId = driverId;
-    this.destination = destination;
-    this.scheduledTime = scheduledTime;
+    this.routeId = routeId;
+    this.stationAreaId = stationAreaId;
+    this.destinationAreaId = destinationAreaId;
+    this.scheduledDeparture = scheduledDeparture;
     this.status = "SCHEDULED";
     if (riderUserIds != null) this.riderUserIds.addAll(riderUserIds);
   }
 
   public String getTripId() { return tripId; }
   public String getDriverId() { return driverId; }
+  public String getRouteId() { return routeId; }
+  public String getStationAreaId() { return stationAreaId; }
+  public String getDestinationAreaId() { return destinationAreaId; }
   public String getStatus() { return status; }
   public void setStatus(String status) { this.status = status; }
-  public Instant getScheduledTime() { return scheduledTime; }
-  public String getDestination() { return destination; }
+  public Instant getScheduledDeparture() { return scheduledDeparture; }
   public List<String> getRiderUserIds() { return riderUserIds; }
 }

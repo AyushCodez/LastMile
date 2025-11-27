@@ -4,6 +4,7 @@ import com.imt.lastmile.rider.domain.RideIntent;
 import com.imt.lastmile.rider.repo.RideIntentRepository;
 import io.grpc.stub.StreamObserver;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import lastmile.rider.RegisterRideIntentRequest;
 import lastmile.rider.RideId;
 import lastmile.rider.RideIntentResponse;
@@ -20,7 +21,11 @@ public class GrpcRiderService extends RiderServiceGrpc.RiderServiceImplBase {
   @Override
   public void registerRideIntent(RegisterRideIntentRequest request, StreamObserver<RideIntentResponse> responseObserver) {
     Instant arr = Instant.ofEpochSecond(request.getArrivalTime().getSeconds());
-    RideIntent intent = new RideIntent(request.getUserId(), request.getStationId(), arr, request.getDestination(), request.getPartySize());
+    RideIntent intent = new RideIntent(request.getUserId(), request.getStationAreaId(), arr, request.getDestinationAreaId(), request.getPartySize());
+    long minutesUntilArrival = ChronoUnit.MINUTES.between(Instant.now(), arr);
+    if (minutesUntilArrival > 10) {
+      intent.setStatus(RideIntent.Status.PENDING);
+    }
     repo.save(intent);
     responseObserver.onNext(RideIntentResponse.newBuilder().setIntentId(intent.getIntentId()).build());
     responseObserver.onCompleted();
@@ -39,6 +44,8 @@ public class GrpcRiderService extends RiderServiceGrpc.RiderServiceImplBase {
       .setIntentId(ri.getIntentId())
       .setStatus(RideStatus.Status.valueOf(ri.getStatus().name()))
       .setTripId(ri.getTripId() == null ? "" : ri.getTripId())
+      .setDestinationAreaId(ri.getDestinationAreaId())
+      .setStationAreaId(ri.getStationAreaId())
       .build());
     responseObserver.onCompleted();
   }

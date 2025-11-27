@@ -3,13 +3,16 @@ package lastmile;
 option java_package = "lastmile";
 option java_multiple_files = true;
 
-message GeoPoint { double lat = 1; double lng = 2; }
+message AreaEdge {
+  string to_area_id = 1;
+  int32 travel_minutes = 2;
+}
 
-message Station {
+message Area {
   string id = 1;
   string name = 2;
-  GeoPoint location = 3;
-  repeated string nearby_places = 4;
+  bool is_station = 3;
+  repeated AreaEdge neighbours = 4;
 }
 
 message UserId { string id = 1; }

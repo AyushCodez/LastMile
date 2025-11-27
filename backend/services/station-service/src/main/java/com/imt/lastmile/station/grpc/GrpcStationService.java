@@ -1,43 +1,70 @@
 package com.imt.lastmile.station.grpc;
 
-import com.imt.lastmile.station.domain.StationEntity;
-import com.imt.lastmile.station.repo.StationRepository;
+import com.imt.lastmile.station.domain.AreaEdgeEntity;
+import com.imt.lastmile.station.domain.AreaEntity;
+import com.imt.lastmile.station.repo.AreaRepository;
 import io.grpc.stub.StreamObserver;
-import lastmile.Station;
-import lastmile.station.NearbyPlacesResponse;
-import lastmile.station.StationId;
+import java.util.List;
+import java.util.stream.Collectors;
+import lastmile.AreaEdge;
+import lastmile.station.AreaId;
+import lastmile.station.AreaList;
+import lastmile.station.ListAreasRequest;
+import lastmile.station.ListStationsRequest;
 import lastmile.station.StationServiceGrpc;
 import org.springframework.stereotype.Service;
 
 @Service
 public class GrpcStationService extends StationServiceGrpc.StationServiceImplBase {
-  private final StationRepository repo;
-  public GrpcStationService(StationRepository repo) { this.repo = repo; }
+  private final AreaRepository repo;
+
+  public GrpcStationService(AreaRepository repo) {
+    this.repo = repo;
+  }
 
   @Override
-  public void getStation(StationId request, StreamObserver<Station> responseObserver) {
-    var opt = repo.findById(request.getId());
-    if (opt.isEmpty()) {
-      responseObserver.onNext(Station.newBuilder().build());
-      responseObserver.onCompleted();
-      return;
-    }
-    StationEntity e = opt.get();
-    responseObserver.onNext(Station.newBuilder()
-      .setId(e.getId())
-      .setName(e.getName())
-      .setLocation(lastmile.GeoPoint.newBuilder().setLat(e.getLat()).setLng(e.getLng()).build())
-      .addAllNearbyPlaces(e.getNearbyPlaces())
-      .build());
+  public void getArea(AreaId request, StreamObserver<lastmile.Area> responseObserver) {
+    repo.findByAreaId(request.getId())
+        .map(this::toProto)
+        .ifPresentOrElse(response -> {
+          responseObserver.onNext(response);
+          responseObserver.onCompleted();
+        }, () -> {
+          responseObserver.onNext(lastmile.Area.newBuilder().build());
+          responseObserver.onCompleted();
+        });
+  }
+
+  @Override
+  public void listAreas(ListAreasRequest request, StreamObserver<AreaList> responseObserver) {
+    List<lastmile.Area> areas = repo.findAll().stream().map(this::toProto).collect(Collectors.toList());
+    responseObserver.onNext(AreaList.newBuilder().addAllItems(areas).build());
     responseObserver.onCompleted();
   }
 
   @Override
-  public void listNearbyPlaces(StationId request, StreamObserver<NearbyPlacesResponse> responseObserver) {
-    var opt = repo.findById(request.getId());
-    responseObserver.onNext(NearbyPlacesResponse.newBuilder()
-      .addAllPlaceIds(opt.map(StationEntity::getNearbyPlaces).orElseGet(java.util.List::of))
-      .build());
+  public void listStations(ListStationsRequest request, StreamObserver<AreaList> responseObserver) {
+    List<lastmile.Area> stations = repo.findAll().stream()
+        .filter(AreaEntity::isStation)
+        .map(this::toProto)
+        .collect(Collectors.toList());
+    responseObserver.onNext(AreaList.newBuilder().addAllItems(stations).build());
     responseObserver.onCompleted();
+  }
+
+  private lastmile.Area toProto(AreaEntity area) {
+    lastmile.Area.Builder builder = lastmile.Area.newBuilder()
+        .setId(area.getAreaId())
+        .setName(area.getName())
+        .setIsStation(area.isStation());
+    area.getNeighbours().forEach(edge -> builder.addNeighbours(toEdge(edge)));
+    return builder.build();
+  }
+
+  private AreaEdge toEdge(AreaEdgeEntity edge) {
+    return AreaEdge.newBuilder()
+        .setToAreaId(edge.getKey().getToAreaId())
+        .setTravelMinutes(edge.getTravelMinutes())
+        .build();
   }
 }

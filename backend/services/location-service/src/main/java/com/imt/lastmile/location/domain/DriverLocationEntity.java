@@ -13,11 +13,8 @@ public class DriverLocationEntity {
   @Column(name = "driver_id", length = 36, nullable = false)
   private String driverId;
 
-  @Column(name = "lat", nullable = false)
-  private double lat;
-
-  @Column(name = "lng", nullable = false)
-  private double lng;
+  @Column(name = "area_id", nullable = false, length = 128)
+  private String areaId;
 
   @Column(name = "ts", nullable = false)
   private Instant ts;
@@ -26,13 +23,12 @@ public class DriverLocationEntity {
   private Double speed;
 
   protected DriverLocationEntity() {}
-  public DriverLocationEntity(String driverId, double lat, double lng, Instant ts, Double speed) {
-    this.driverId = driverId; this.lat = lat; this.lng = lng; this.ts = ts; this.speed = speed;
+  public DriverLocationEntity(String driverId, String areaId, Instant ts, Double speed) {
+    this.driverId = driverId; this.areaId = areaId; this.ts = ts; this.speed = speed;
   }
   public Long getId() { return id; }
   public String getDriverId() { return driverId; }
-  public double getLat() { return lat; }
-  public double getLng() { return lng; }
+  public String getAreaId() { return areaId; }
   public Instant getTs() { return ts; }
   public Double getSpeed() { return speed; }
 }

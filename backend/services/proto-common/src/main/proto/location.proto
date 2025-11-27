@@ -3,18 +3,40 @@ package lastmile.location;
 option java_package = "lastmile.location";
 option java_multiple_files = true;
 import "google/protobuf/timestamp.proto";
-import "common.proto";
 
 service LocationService {
-  rpc StreamDriverLocation(stream DriverLocation) returns (Ack);
-  rpc GetDriverLocation(DriverId) returns (DriverLocation);
+  rpc StreamDriverTelemetry(stream DriverTelemetry) returns (Ack);
+  rpc GetDriverSnapshot(DriverId) returns (DriverSnapshot);
+  rpc GetDriverEta(DriverEtaRequest) returns (DriverEta);
 }
 
-message DriverLocation {
+message DriverTelemetry {
   string driver_id = 1;
-  GeoPoint pt = 2;
-  google.protobuf.Timestamp ts = 3;
-  double speed = 4;
+  string route_id = 2;
+  string current_area_id = 3;
+  int32 occupancy = 4;
+  google.protobuf.Timestamp ts = 5;
 }
+
+message DriverSnapshot {
+  string driver_id = 1;
+  string route_id = 2;
+  string current_area_id = 3;
+  int32 occupancy = 4;
+  google.protobuf.Timestamp ts = 5;
+}
+
+message DriverEtaRequest {
+  string driver_id = 1;
+  string station_area_id = 2;
+}
+
+message DriverEta {
+  string driver_id = 1;
+  string station_area_id = 2;
+  bool reachable = 3;
+  int32 eta_minutes = 4;
+}
+
 message DriverId { string id = 1; }
 message Ack { bool ok = 1; string msg = 2; }

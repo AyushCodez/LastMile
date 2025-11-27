@@ -5,8 +5,12 @@ option java_multiple_files = true;
 import "common.proto";
 
 service StationService {
-  rpc GetStation(StationId) returns (Station);
-  rpc ListNearbyPlaces(StationId) returns (NearbyPlacesResponse);
+  rpc GetArea(AreaId) returns (lastmile.Area);
+  rpc ListAreas(ListAreasRequest) returns (AreaList);
+  rpc ListStations(ListStationsRequest) returns (AreaList);
 }
-message StationId { string id = 1; }
-message NearbyPlacesResponse { repeated string place_ids = 1; }
+
+message AreaId { string id = 1; }
+message AreaList { repeated lastmile.Area items = 1; }
+message ListAreasRequest {}
+message ListStationsRequest {}

@@ -16,14 +16,14 @@ public class RideIntent {
   @Column(name = "user_id", length = 36, nullable = false)
   private String userId;
 
-  @Column(name = "station_id", length = 36, nullable = false)
-  private String stationId;
+  @Column(name = "station_area_id", length = 64, nullable = false)
+  private String stationAreaId;
 
   @Column(name = "arrival_time", nullable = false)
   private Instant arrivalTime;
 
-  @Column(name = "destination", nullable = false)
-  private String destination;
+  @Column(name = "destination_area_id", length = 64, nullable = false)
+  private String destinationAreaId;
 
   @Column(name = "party_size", nullable = false)
   private int partySize;
@@ -37,20 +37,20 @@ public class RideIntent {
 
   protected RideIntent() {}
 
-  public RideIntent(String userId, String stationId, Instant arrivalTime, String destination, int partySize) {
+  public RideIntent(String userId, String stationAreaId, Instant arrivalTime, String destinationAreaId, int partySize) {
     this.intentId = UUID.randomUUID().toString();
     this.userId = userId;
-    this.stationId = stationId;
+    this.stationAreaId = stationAreaId;
     this.arrivalTime = arrivalTime;
-    this.destination = destination;
+    this.destinationAreaId = destinationAreaId;
     this.partySize = partySize;
   }
 
   public String getIntentId() { return intentId; }
   public String getUserId() { return userId; }
-  public String getStationId() { return stationId; }
+  public String getStationAreaId() { return stationAreaId; }
   public Instant getArrivalTime() { return arrivalTime; }
-  public String getDestination() { return destination; }
+  public String getDestinationAreaId() { return destinationAreaId; }
   public int getPartySize() { return partySize; }
   public Status getStatus() { return status; }
   public void setStatus(Status status) { this.status = status; }

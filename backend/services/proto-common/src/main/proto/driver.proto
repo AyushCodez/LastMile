@@ -2,27 +2,52 @@ syntax = "proto3";
 package lastmile.driver;
 option java_package = "lastmile.driver";
 option java_multiple_files = true;
-// Removed unused imports (timestamp, common)
+import "google/protobuf/timestamp.proto";
 
 service DriverService {
-  rpc RegisterDriver(RegisterDriverRequest) returns (DriverInfo);
-  rpc RegisterRoute(RegisterRouteRequest) returns (Route);
+  rpc RegisterDriver(RegisterDriverRequest) returns (DriverProfile);
+  rpc RegisterRoute(RegisterRouteRequest) returns (RoutePlan);
+  rpc UpdateRoute(UpdateRouteRequest) returns (RoutePlan);
   rpc UpdatePickupStatus(UpdatePickupRequest) returns (Ack);
-  rpc GetDriver(DriverId) returns (DriverInfo);
+  rpc GetDriver(DriverId) returns (DriverProfile);
 }
 
 message RegisterDriverRequest { string user_id = 1; string vehicle_no = 2; int32 capacity = 3; }
 
-message DriverInfo {
+message DriverProfile {
   string driver_id = 1;
   string user_id = 2;
   string vehicle_no = 3;
   int32 capacity = 4;
-  repeated Route routes = 5;
+  repeated RoutePlan routes = 5;
 }
 
-message Route { string route_id = 1; string destination = 2; repeated string station_ids = 3; }
-message RegisterRouteRequest { string driver_id = 1; Route route = 2; }
+message RoutePlan {
+  string route_id = 1;
+  string driver_id = 2;
+  repeated RouteStop stops = 3;
+  string final_area_id = 4;
+  google.protobuf.Timestamp created_at = 5;
+}
+
+message RouteStop {
+  int32 sequence = 1;
+  string area_id = 2;
+  bool is_station = 3;
+  int32 arrival_offset_minutes = 4;
+}
+
+message RegisterRouteRequest {
+  string driver_id = 1;
+  repeated RouteStop stops = 2;
+}
+
+message UpdateRouteRequest {
+  string driver_id = 1;
+  string route_id = 2;
+  repeated RouteStop stops = 3;
+}
+
 message UpdatePickupRequest { string driver_id = 1; string route_id = 2; bool picking_up = 3; }
 message Ack { bool ok = 1; string msg = 2; }
 message DriverId { string id = 1; }

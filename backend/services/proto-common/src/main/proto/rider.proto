@@ -11,9 +11,9 @@ service RiderService {
 
 message RegisterRideIntentRequest {
   string user_id = 1;
-  string station_id = 2;
+  string station_area_id = 2;
   google.protobuf.Timestamp arrival_time = 3;
-  string destination = 4;
+  string destination_area_id = 4;
   int32 party_size = 5;
 }
 message RideIntentResponse { string intent_id = 1; }
@@ -23,4 +23,6 @@ message RideStatus {
   string intent_id = 1;
   Status status = 2;
   string trip_id = 3;
+  string destination_area_id = 4;
+  string station_area_id = 5;
 }

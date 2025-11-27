@@ -87,17 +87,7 @@
 						<pluginArtifact>io.grpc:protoc-gen-grpc-java:${grpc.version}:exe:${os.detected.classifier}</pluginArtifact>
 					</configuration>
 				</plugin>
-				<!-- Disable spring-boot repackage for proto-common (no main class) -->
-				<plugin>
-					<groupId>org.springframework.boot</groupId>
-					<artifactId>spring-boot-maven-plugin</artifactId>
-					<configuration>
-						<skip>true</skip>
-					</configuration>
-					<executions>
-						<execution><id>repackage</id><phase>none</phase></execution>
-					</executions>
-				</plugin>
+				<!-- Spring Boot plugin configuration is inherited by service modules; proto-common overrides it locally -->
 				<!-- Exclude .proto definition files from assembled service JARs (only generated Java needed) -->
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>

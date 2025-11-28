@@ -13,13 +13,24 @@ import lastmile.station.ListAreasRequest;
 import lastmile.station.ListStationsRequest;
 import lastmile.station.StationServiceGrpc;
 import net.devh.boot.grpc.server.service.GrpcService;
+import jakarta.annotation.PostConstruct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @GrpcService
 public class GrpcStationService extends StationServiceGrpc.StationServiceImplBase {
   private final AreaRepository repo;
 
+  private static final Logger log = LoggerFactory.getLogger(GrpcStationService.class);
+
   public GrpcStationService(AreaRepository repo) {
     this.repo = repo;
+    log.info("GrpcStationService <ctor> called");
+  }
+
+  @PostConstruct
+  public void init() {
+    log.info("GrpcStationService @PostConstruct - bean initialized");
   }
 
   @Override

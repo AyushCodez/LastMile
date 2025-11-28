@@ -2,7 +2,7 @@ package com.imt.lastmile.user.grpc;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
-import com.imt.lastmile.security.JwtProperties;
+import com.imt.lastmile.user.security.JwtProperties;
 import com.imt.lastmile.user.domain.User;
 import com.imt.lastmile.user.repo.UserRepository;
 import io.grpc.stub.StreamObserver;

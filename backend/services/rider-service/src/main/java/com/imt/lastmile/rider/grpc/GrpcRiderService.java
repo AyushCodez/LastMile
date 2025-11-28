@@ -10,9 +10,9 @@ import lastmile.rider.RideId;
 import lastmile.rider.RideIntentResponse;
 import lastmile.rider.RiderServiceGrpc;
 import lastmile.rider.RideStatus;
-import org.springframework.stereotype.Service;
+import net.devh.boot.grpc.server.service.GrpcService;
 
-@Service
+@GrpcService
 public class GrpcRiderService extends RiderServiceGrpc.RiderServiceImplBase {
   private final RideIntentRepository repo;
 

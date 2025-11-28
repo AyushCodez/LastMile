@@ -12,9 +12,9 @@ import lastmile.matching.MatchResponse;
 import lastmile.matching.MatchResult;
 import lastmile.matching.MatchingServiceGrpc;
 import lastmile.matching.SubscribeRequest;
-import org.springframework.stereotype.Service;
+import net.devh.boot.grpc.server.service.GrpcService;
 
-@Service
+@GrpcService
 public class GrpcMatchingService extends MatchingServiceGrpc.MatchingServiceImplBase {
   private final RiderIntentStore riderStore = new RiderIntentStore();
   private final List<StreamObserver<MatchEvent>> subscribers = new CopyOnWriteArrayList<>();

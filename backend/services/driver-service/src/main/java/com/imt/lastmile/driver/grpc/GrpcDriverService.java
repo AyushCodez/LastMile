@@ -25,10 +25,10 @@ import lastmile.driver.RegisterRouteRequest;
 import lastmile.driver.RoutePlan;
 import lastmile.driver.RouteStop;
 import lastmile.driver.UpdateRouteRequest;
-import org.springframework.stereotype.Service;
+import net.devh.boot.grpc.server.service.GrpcService;
 import org.springframework.transaction.annotation.Transactional;
 
-@Service
+@GrpcService
 public class GrpcDriverService extends DriverServiceGrpc.DriverServiceImplBase {
   private final DriverRepository driverRepo;
   private final RouteRepository routeRepo;

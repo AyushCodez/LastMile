@@ -12,9 +12,9 @@ import lastmile.station.AreaList;
 import lastmile.station.ListAreasRequest;
 import lastmile.station.ListStationsRequest;
 import lastmile.station.StationServiceGrpc;
-import org.springframework.stereotype.Service;
+import net.devh.boot.grpc.server.service.GrpcService;
 
-@Service
+@GrpcService
 public class GrpcStationService extends StationServiceGrpc.StationServiceImplBase {
   private final AreaRepository repo;
 

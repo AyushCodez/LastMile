@@ -7,9 +7,9 @@ import lastmile.notification.Ack;
 import lastmile.notification.Notification;
 import lastmile.notification.NotificationServiceGrpc;
 import lastmile.notification.SubscribeRequest;
-import org.springframework.stereotype.Service;
+import net.devh.boot.grpc.server.service.GrpcService;
 
-@Service
+@GrpcService
 public class GrpcNotificationService extends NotificationServiceGrpc.NotificationServiceImplBase {
   private final NotificationRepository repo;
   public GrpcNotificationService(NotificationRepository repo) { this.repo = repo; }

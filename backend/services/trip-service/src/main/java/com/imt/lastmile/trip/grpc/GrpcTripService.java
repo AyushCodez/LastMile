@@ -1,6 +1,5 @@
 package com.imt.lastmile.trip.grpc;
 
-import com.google.protobuf.TimestampProto;
 import com.google.protobuf.TimestampProto.Timestamp;
 import com.imt.lastmile.trip.domain.Trip;
 import com.imt.lastmile.trip.repo.TripRepository;
@@ -9,9 +8,9 @@ import java.time.Instant;
 import lastmile.trip.CreateTripRequest;
 import lastmile.trip.TripId;
 import lastmile.trip.TripServiceGrpc;
-import org.springframework.stereotype.Service;
+import net.devh.boot.grpc.server.service.GrpcService;
 
-@Service
+@GrpcService
 public class GrpcTripService extends TripServiceGrpc.TripServiceImplBase {
   private final TripRepository repo;
   public GrpcTripService(TripRepository repo) { this.repo = repo; }

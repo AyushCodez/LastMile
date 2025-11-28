@@ -23,108 +23,22 @@
   </dependencies>
   <build>
     <plugins>
-      <!-- Copy protoc and grpc plugin executables locally -->
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-dependency-plugin</artifactId>
+        <groupId>org.xolstice.maven.plugins</groupId>
+        <artifactId>protobuf-maven-plugin</artifactId>
         <executions>
           <execution>
-            <id>fetch-protoc-tools</id>
-            <phase>generate-sources</phase>
-            <goals><goal>copy</goal></goals>
+            <goals>
+              <goal>compile</goal>
+              <goal>compile-custom</goal>
+            </goals>
             <configuration>
-              <artifactItems>
-                <artifactItem>
-                  <groupId>com.google.protobuf</groupId>
-                  <artifactId>protoc</artifactId>
-                  <version>${protobuf.version}</version>
-                  <classifier>${os.detected.classifier}</classifier>
-                  <type>exe</type>
-                  <destFileName>protoc</destFileName>
-                  <outputDirectory>${project.build.directory}/protoc-tools</outputDirectory>
-                </artifactItem>
-                <artifactItem>
-                  <groupId>io.grpc</groupId>
-                  <artifactId>protoc-gen-grpc-java</artifactId>
-                  <version>${grpc.version}</version>
-                  <classifier>${os.detected.classifier}</classifier>
-                  <type>exe</type>
-                  <destFileName>protoc-gen-grpc-java</destFileName>
-                  <outputDirectory>${project.build.directory}/protoc-tools</outputDirectory>
-                </artifactItem>
-              </artifactItems>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <!-- Ensure executables have proper permissions and create output directories -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-antrun-plugin</artifactId>
-        <version>3.1.0</version>
-        <executions>
-          <execution>
-            <id>prep-protoc</id>
-            <phase>generate-sources</phase>
-            <goals><goal>run</goal></goals>
-            <configuration>
-              <target>
-                <mkdir dir="${project.build.directory}/generated-sources/protobuf/java"/>
-                <mkdir dir="${project.build.directory}/generated-sources/protobuf/grpc-java"/>
-                <chmod file="${project.build.directory}/protoc-tools/protoc" perm="755"/>
-                <chmod file="${project.build.directory}/protoc-tools/protoc-gen-grpc-java" perm="755"/>
-              </target>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <!-- Single protoc invocation to generate Java messages and gRPC stubs -->
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>exec-maven-plugin</artifactId>
-        <version>3.3.0</version>
-        <executions>
-          <execution>
-            <id>generate-protobuf-grpc</id>
-            <phase>generate-sources</phase>
-            <goals><goal>exec</goal></goals>
-            <configuration>
-              <executable>${project.build.directory}/protoc-tools/protoc</executable>
-              <workingDirectory>${project.basedir}</workingDirectory>
-              <arguments>
-                <argument>-I${project.basedir}/src/main/proto</argument>
-                <argument>--plugin=protoc-gen-grpc-java=${project.build.directory}/protoc-tools/protoc-gen-grpc-java</argument>
-                <argument>--java_out=${project.build.directory}/generated-sources/protobuf/java</argument>
-                <argument>--grpc-java_out=${project.build.directory}/generated-sources/protobuf/grpc-java</argument>
-                <argument>${project.basedir}/src/main/proto/common.proto</argument>
-                <argument>${project.basedir}/src/main/proto/google/protobuf/timestamp.proto</argument>
-                <argument>${project.basedir}/src/main/proto/driver.proto</argument>
-                <argument>${project.basedir}/src/main/proto/location.proto</argument>
-                <argument>${project.basedir}/src/main/proto/matching.proto</argument>
-                <argument>${project.basedir}/src/main/proto/notification.proto</argument>
-                <argument>${project.basedir}/src/main/proto/rider.proto</argument>
-                <argument>${project.basedir}/src/main/proto/station.proto</argument>
-                <argument>${project.basedir}/src/main/proto/trip.proto</argument>
-                <argument>${project.basedir}/src/main/proto/user.proto</argument>
-              </arguments>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>build-helper-maven-plugin</artifactId>
-        <version>3.6.0</version>
-        <executions>
-          <execution>
-            <id>add-proto-sources</id>
-            <phase>generate-sources</phase>
-            <goals><goal>add-source</goal></goals>
-            <configuration>
-              <sources>
-                <source>${project.build.directory}/generated-sources/protobuf/java</source>
-                <source>${project.build.directory}/generated-sources/protobuf/grpc-java</source>
-              </sources>
+              <protoSourceRoot>${project.basedir}/src/main/proto</protoSourceRoot>
+              <outputDirectory>${project.build.directory}/generated-sources/protobuf/java</outputDirectory>
+              <clearOutputDirectory>false</clearOutputDirectory>
+              <pluginId>grpc-java</pluginId>
+              <protocArtifact>com.google.protobuf:protoc:${protobuf.version}:exe:${os.detected.classifier}</protocArtifact>
+              <pluginArtifact>io.grpc:protoc-gen-grpc-java:${grpc.version}:exe:${os.detected.classifier}</pluginArtifact>
             </configuration>
           </execution>
         </executions>

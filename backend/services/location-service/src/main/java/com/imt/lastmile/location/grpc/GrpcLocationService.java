@@ -29,9 +29,9 @@ import lastmile.matching.MatchingServiceGrpc;
 import net.devh.boot.grpc.client.inject.GrpcClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
+import net.devh.boot.grpc.server.service.GrpcService;
 
-@Service
+@GrpcService
 public class GrpcLocationService extends LocationServiceGrpc.LocationServiceImplBase {
   private static final Logger log = LoggerFactory.getLogger(GrpcLocationService.class);
   private static final Duration ROUTE_CACHE_TTL = Duration.ofMinutes(5);

@@ -14,12 +14,12 @@ import lastmile.user.AuthResponse;
 import lastmile.UserId;
 import lastmile.user.UserProfile;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
+import net.devh.boot.grpc.server.service.GrpcService;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
-@Service
+@GrpcService
 public class GrpcUserService extends UserServiceGrpc.UserServiceImplBase {
   private final UserRepository repo;
   private final PasswordEncoder passwordEncoder;

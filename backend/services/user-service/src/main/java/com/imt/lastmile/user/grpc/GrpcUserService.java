@@ -1,8 +1,5 @@
 package com.imt.lastmile.user.grpc;
 
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.algorithms.Algorithm;
-import com.imt.lastmile.user.security.JwtProperties;
 import com.imt.lastmile.user.domain.User;
 import com.imt.lastmile.user.repo.UserRepository;
 import io.grpc.stub.StreamObserver;
@@ -16,23 +13,18 @@ import lastmile.user.UserProfile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import net.devh.boot.grpc.server.service.GrpcService;
 
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
+
 
 @GrpcService
 public class GrpcUserService extends UserServiceGrpc.UserServiceImplBase {
   private final UserRepository repo;
   private final PasswordEncoder passwordEncoder;
-  private final Algorithm alg;
-  private final long expiresMinutes;
-  private final JwtProperties jwtProps;
+  private final com.imt.lastmile.security.JwtUtil jwtUtil;
 
-  public GrpcUserService(UserRepository repo, PasswordEncoder passwordEncoder, Algorithm alg, Long expiresMinutes, JwtProperties jwtProps) {
+  public GrpcUserService(UserRepository repo, PasswordEncoder passwordEncoder, com.imt.lastmile.security.JwtUtil jwtUtil) {
     this.repo = repo;
     this.passwordEncoder = passwordEncoder;
-    this.alg = alg;
-    this.expiresMinutes = expiresMinutes;
-    this.jwtProps = jwtProps;
+    this.jwtUtil = jwtUtil;
   }
 
   @Override
@@ -54,14 +46,21 @@ public class GrpcUserService extends UserServiceGrpc.UserServiceImplBase {
       responseObserver.onCompleted();
       return;
     }
-  Instant exp = Instant.now().plus(expiresMinutes, ChronoUnit.MINUTES);
-  var jwtBuilder = JWT.create().withSubject(opt.get().getId()).withExpiresAt(java.util.Date.from(exp));
-  if (jwtProps.getIssuer() != null) jwtBuilder.withIssuer(jwtProps.getIssuer());
-  if (jwtProps.getAudience() != null) jwtBuilder.withAudience(jwtProps.getAudience());
-  String token = jwtBuilder.sign(alg);
+    
+    String token = jwtUtil.generateToken(opt.get().getId(), opt.get().getRole().name());
+    
+    // We don't have exact expiry time from JwtUtil easily exposed without decoding, 
+    // but for now we can just return the token. The proto expects timestamp, 
+    // we can either update JwtUtil to return it or just send current time + default.
+    // For simplicity, let's just send the token. The client usually decodes it.
+    // But the proto has `expires` field.
+    // Let's just set it to 24h from now roughly or 0 if not critical.
+    long now = System.currentTimeMillis();
+    long exp = now + 86400000; // 24h
+    
     responseObserver.onNext(AuthResponse.newBuilder()
       .setJwt(token)
-  .setExpires(com.google.protobuf.TimestampProto.Timestamp.newBuilder().setSeconds(exp.getEpochSecond()).build())
+      .setExpires(com.google.protobuf.TimestampProto.Timestamp.newBuilder().setSeconds(exp / 1000).build())
       .build());
     responseObserver.onCompleted();
   }

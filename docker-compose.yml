@@ -1,24 +1,199 @@
-version: '3.9'
+version: '3.8'
+
 services:
   postgres:
-    image: postgres:16-alpine
-    restart: unless-stopped
-    env_file:
-      - .env.local
+    image: postgres:15-alpine
+    container_name: lastmile-postgres
     environment:
-      # Fallbacks if not in env file
-      POSTGRES_USER: ${POSTGRES_USER:-dev_alice}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dev_password}
-      POSTGRES_DB: ${POSTGRES_DB:-lastmile}
+      POSTGRES_DB: lastmile
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
     ports:
       - "5432:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:7-alpine
+    container_name: lastmile-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  matching-service:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: matching-service
+    container_name: matching-service
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      SERVER_PORT: 8087
+      GRPC_PORT: 9097
+    ports:
+      - "8087:8087"
+      - "9097:9097"
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  rider-service:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: rider-service
+    container_name: rider-service
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      DB_URL: jdbc:postgresql://postgres:5432/lastmile
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      SERVER_PORT: 8083
+      GRPC_PORT: 9093
+      MATCHING_SERVICE_HOST: matching-service
+    ports:
+      - "8083:8083"
+      - "9093:9093"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      matching-service:
+        condition: service_started
+
+  driver-service:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: driver-service
+    container_name: driver-service
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      DB_URL: jdbc:postgresql://postgres:5432/lastmile
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      SERVER_PORT: 8082
+      GRPC_PORT: 9092
+    ports:
+      - "8082:8082"
+      - "9092:9092"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  location-service:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: location-service
+    container_name: location-service
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      DB_URL: jdbc:postgresql://postgres:5432/lastmile
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      SERVER_PORT: 8084
+      GRPC_PORT: 9094
+      DRIVER_GRPC: static://driver-service:9092
+      MATCHING_GRPC: static://matching-service:9097
+    ports:
+      - "8084:8084"
+      - "9094:9094"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  station-service:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: station-service
+    container_name: station-service
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      DB_URL: jdbc:postgresql://postgres:5432/lastmile
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      SERVER_PORT: 8085
+      GRPC_PORT: 9095
+    ports:
+      - "8085:8085"
+      - "9095:9095"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  trip-service:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: trip-service
+    container_name: trip-service
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      DB_URL: jdbc:postgresql://postgres:5432/lastmile
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      SERVER_PORT: 8086
+      GRPC_PORT: 9096
+    ports:
+      - "8086:8086"
+      - "9096:9096"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  user-service:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: user-service
+    container_name: user-service
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      DB_URL: jdbc:postgresql://postgres:5432/lastmile
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      SERVER_PORT: 8081
+      GRPC_PORT: 9091
+    ports:
+      - "8081:8081"
+      - "9091:9091"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  notification-service:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: notification-service
+    container_name: notification-service
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SERVER_PORT: 8088
+      GRPC_PORT: 9098
+    ports:
+      - "8088:8088"
+      - "9098:9098"
+
 volumes:
-  pgdata:
+  postgres_data:

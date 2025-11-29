@@ -13,6 +13,10 @@ import net.devh.boot.grpc.server.service.GrpcService;
 @GrpcService
 public class GrpcTripService extends TripServiceGrpc.TripServiceImplBase {
   private final TripRepository repo;
+
+  @net.devh.boot.grpc.client.inject.GrpcClient("notification-service")
+  private lastmile.notification.NotificationServiceGrpc.NotificationServiceBlockingStub notificationClient;
+
   public GrpcTripService(TripRepository repo) { this.repo = repo; }
 
   @Override
@@ -30,6 +34,28 @@ public class GrpcTripService extends TripServiceGrpc.TripServiceImplBase {
     repo.save(t);
     responseObserver.onNext(toProto(t));
     responseObserver.onCompleted();
+
+    // Notify Driver
+    try {
+      notificationClient.notify(lastmile.notification.Notification.newBuilder()
+          .setUserId(t.getDriverId())
+          .setTitle("Trip Created")
+          .setBody("Trip " + t.getTripId() + " has been created.")
+          .putMetadata("tripId", t.getTripId())
+          .build());
+    } catch (Exception ignored) {}
+
+    // Notify Riders
+    for (String riderId : t.getRiderUserIds()) {
+      try {
+        notificationClient.notify(lastmile.notification.Notification.newBuilder()
+            .setUserId(riderId)
+            .setTitle("Trip Created")
+            .setBody("Your trip " + t.getTripId() + " is confirmed.")
+            .putMetadata("tripId", t.getTripId())
+            .build());
+      } catch (Exception ignored) {}
+    }
   }
 
   @Override
@@ -45,6 +71,30 @@ public class GrpcTripService extends TripServiceGrpc.TripServiceImplBase {
     repo.save(t);
     responseObserver.onNext(toProto(t));
     responseObserver.onCompleted();
+
+    // Notify Driver
+    try {
+      notificationClient.notify(lastmile.notification.Notification.newBuilder()
+          .setUserId(t.getDriverId())
+          .setTitle("Trip Status Updated")
+          .setBody("Trip " + t.getTripId() + " is now " + t.getStatus())
+          .putMetadata("tripId", t.getTripId())
+          .putMetadata("status", t.getStatus())
+          .build());
+    } catch (Exception ignored) {}
+
+    // Notify Riders
+    for (String riderId : t.getRiderUserIds()) {
+      try {
+        notificationClient.notify(lastmile.notification.Notification.newBuilder()
+            .setUserId(riderId)
+            .setTitle("Trip Update")
+            .setBody("Your trip is now " + t.getStatus())
+            .putMetadata("tripId", t.getTripId())
+            .putMetadata("status", t.getStatus())
+            .build());
+      } catch (Exception ignored) {}
+    }
   }
 
   @Override

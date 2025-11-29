@@ -8,16 +8,27 @@ public class RiderIntent {
   private final String stationAreaId;
   private final String destinationAreaId;
   private final Instant createdAt;
+  private final Instant arrivalTime;
 
-  public RiderIntent(String riderId, String stationAreaId, String destinationAreaId, Instant createdAt) {
+  public RiderIntent() {
+    this.riderId = null;
+    this.stationAreaId = null;
+    this.destinationAreaId = null;
+    this.createdAt = null;
+    this.arrivalTime = null;
+  }
+
+  public RiderIntent(String riderId, String stationAreaId, String destinationAreaId, Instant createdAt, Instant arrivalTime) {
     this.riderId = riderId;
     this.stationAreaId = stationAreaId;
     this.destinationAreaId = destinationAreaId;
     this.createdAt = createdAt;
+    this.arrivalTime = arrivalTime;
   }
 
   public String getRiderId() { return riderId; }
   public String getStationAreaId() { return stationAreaId; }
   public String getDestinationAreaId() { return destinationAreaId; }
   public Instant getCreatedAt() { return createdAt; }
+  public Instant getArrivalTime() { return arrivalTime; }
 }

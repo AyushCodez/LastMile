@@ -122,6 +122,8 @@ $driverPayload = @'
 '@
 grpcurl -plaintext -d $driverPayload localhost:9092 lastmile.driver.DriverService/RegisterDriver
 
+TODO: register the user for the driver before creating it.
+
 $routePayload = @'
 {
   "driverId": "<driver-id-from-previous-response>",

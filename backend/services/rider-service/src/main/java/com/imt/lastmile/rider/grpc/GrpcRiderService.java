@@ -14,6 +14,9 @@ import net.devh.boot.grpc.server.service.GrpcService;
 
 @GrpcService
 public class GrpcRiderService extends RiderServiceGrpc.RiderServiceImplBase {
+  @net.devh.boot.grpc.client.inject.GrpcClient("matching-service")
+  private lastmile.matching.MatchingServiceGrpc.MatchingServiceBlockingStub matchingStub;
+
   private final RideIntentRepository repo;
 
   public GrpcRiderService(RideIntentRepository repo) { this.repo = repo; }
@@ -27,6 +30,23 @@ public class GrpcRiderService extends RiderServiceGrpc.RiderServiceImplBase {
       intent.setStatus(RideIntent.Status.PENDING);
     }
     repo.save(intent);
+
+    // Call Matching Service
+    try {
+        lastmile.matching.AddRiderIntentRequest matchReq = lastmile.matching.AddRiderIntentRequest.newBuilder()
+            .setRiderId(request.getUserId())
+            .setStationAreaId(request.getStationAreaId())
+            .setDestinationAreaId(request.getDestinationAreaId())
+            .setArrivalTime(request.getArrivalTime())
+            .build();
+        
+        matchingStub.addRiderIntent(matchReq);
+    } catch (Exception e) {
+        // Log error but don't fail the rider request entirely? 
+        // Or maybe we should fail? For now, we'll just print stack trace.
+        e.printStackTrace();
+    }
+
     responseObserver.onNext(RideIntentResponse.newBuilder().setIntentId(intent.getIntentId()).build());
     responseObserver.onCompleted();
   }

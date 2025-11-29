@@ -1,9 +1,8 @@
 package com.imt.lastmile.user.grpc;
 
-import com.auth0.jwt.algorithms.Algorithm;
 import com.imt.lastmile.user.domain.User;
-import com.imt.lastmile.user.security.JwtProperties;
 import com.imt.lastmile.user.repo.UserRepository;
+import com.imt.lastmile.security.JwtUtil;
 import lastmile.user.AuthResponse;
 import lastmile.user.Credentials;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,33 +16,29 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 
 class GrpcUserServiceTest {
   private UserRepository repo;
   private BCryptPasswordEncoder encoder;
-  private Algorithm alg;
+  private JwtUtil jwtUtil;
   private GrpcUserService service;
-  private JwtProperties jwtProps;
 
   @BeforeEach
   void setup() {
     repo = Mockito.mock(UserRepository.class);
     encoder = new BCryptPasswordEncoder();
-  alg = Algorithm.HMAC256("test-secret");
-  jwtProps = new JwtProperties();
-  jwtProps.setIssuer("test-issuer");
-  jwtProps.setAudience("test-audience");
-  jwtProps.setSecret("test-secret");
-  jwtProps.setExpiresMinutes(15);
-  service = new GrpcUserService(repo, encoder, alg, 15L, jwtProps);
+    jwtUtil = Mockito.mock(JwtUtil.class);
+    service = new GrpcUserService(repo, encoder, jwtUtil);
   }
 
   @Test
   void authenticateSuccessReturnsJwtAndExpiry() {
     String rawPass = "pw123";
     User u = new User("Name","email@test.com", encoder.encode(rawPass), User.Role.RIDER);
-  // Provide deterministic user id by mocking repository return with preset UUID inside domain object
-  Mockito.when(repo.findByEmail("email@test.com")).thenReturn(Optional.of(u));
+    // Provide deterministic user id by mocking repository return with preset UUID inside domain object
+    Mockito.when(repo.findByEmail("email@test.com")).thenReturn(Optional.of(u));
+    Mockito.when(jwtUtil.generateToken(eq(u.getId()), anyString())).thenReturn("mock-token");
 
     Credentials req = Credentials.newBuilder().setEmail("email@test.com").setPassword(rawPass).build();
     AtomicReference<AuthResponse> captured = new AtomicReference<>();
@@ -51,13 +46,13 @@ class GrpcUserServiceTest {
 
     AuthResponse resp = captured.get();
     assertNotNull(resp, "response should be captured");
-    assertNotEquals("INVALID", resp.getJwt(), "jwt should not be INVALID");
+    assertEquals("mock-token", resp.getJwt(), "jwt should match mock");
     assertTrue(resp.getExpires().getSeconds() > 0, "expiry seconds populated");
   }
 
   @Test
   void authenticateFailureReturnsInvalid() {
-  Mockito.when(repo.findByEmail(anyString())).thenReturn(Optional.empty());
+    Mockito.when(repo.findByEmail(anyString())).thenReturn(Optional.empty());
     Credentials req = Credentials.newBuilder().setEmail("bad@test.com").setPassword("nope").build();
     AtomicReference<AuthResponse> captured = new AtomicReference<>();
     service.authenticate(req, observer(captured));

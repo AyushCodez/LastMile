@@ -7,6 +7,7 @@ import "google/protobuf/timestamp.proto";
 service MatchingService {
   rpc EvaluateDriver(EvaluateDriverRequest) returns (MatchResponse);
   rpc SubscribeMatches(SubscribeRequest) returns (stream MatchEvent);
+  rpc AddRiderIntent(AddRiderIntentRequest) returns (AddRiderIntentResponse);
 }
 
 message EvaluateDriverRequest {
@@ -41,3 +42,15 @@ message MatchEvent {
 }
 
 message SubscribeRequest { string client_id = 1; }
+
+message AddRiderIntentRequest {
+  string rider_id = 1;
+  string station_area_id = 2;
+  string destination_area_id = 3;
+  google.protobuf.Timestamp arrival_time = 4;
+}
+
+message AddRiderIntentResponse {
+  bool success = 1;
+  string msg = 2;
+}

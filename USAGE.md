@@ -121,6 +121,7 @@ grpcurl -plaintext -H "Authorization: Bearer $RIDER_TOKEN" -d '{"user_id": "RIDE
 
 ## Service Ports
 
+- **Frontend**: 5173 (Dev) / 8080 (Envoy Proxy)
 - **User Service**: 9090
 - **Rider Service**: 9091
 - **Driver Service**: 9092
@@ -129,4 +130,27 @@ grpcurl -plaintext -H "Authorization: Bearer $RIDER_TOKEN" -d '{"user_id": "RIDE
 - **Trip Service**: 9098
 - **Matching Service**: 9097
 - **Notification Service**: 9096
+
+## Running the Frontend
+
+1.  **Start the Backend & Envoy**:
+    ```bash
+    docker-compose up --build
+    ```
+    *Ensure the `envoy` container is running and healthy.*
+
+2.  **Start the Frontend**:
+    ```bash
+    cd frontend
+    npm install
+    npm run dev
+    ```
+    *Access the app at http://localhost:5173*
+
+3.  **Usage**:
+    -   **Login**: Use any email/password (e.g., `rider@test.com` / `password`). Select "Rider" or "Driver".
+    -   **Rider**: Enter Station ID (e.g., `majestic`) and Destination ID (e.g., `koramangala`). Click "Request Ride".
+    -   **Driver**: Click "Register Demo Route". Then "Start Simulation".
+    -   **Notifications**: Watch the notification panel on both dashboards for updates.
+
 

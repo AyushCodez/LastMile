@@ -13,7 +13,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -24,7 +24,7 @@ services:
     ports:
       - "6379:6379"
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -195,5 +195,30 @@ services:
       - "8088:8088"
       - "9098:9098"
 
+  envoy:
+    image: envoyproxy/envoy:v1.29-latest
+    container_name: envoy
+    volumes:
+      - ./backend/envoy.yaml:/etc/envoy/envoy.yaml
+    ports:
+      - "8080:8080"
+      - "9901:9901"
+    networks:
+      - lastmile-network
+    depends_on:
+      - user-service
+      - rider-service
+      - driver-service
+      - location-service
+      - station-service
+      - trip-service
+      - matching-service
+      - notification-service
+
+networks:
+  lastmile-network:
+    driver: bridge
+
 volumes:
   postgres_data:
+  redis_data:

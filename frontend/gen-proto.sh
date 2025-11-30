@@ -1,9 +1,7 @@
 #!/bin/bash
 mkdir -p src/proto
 protoc -I=../backend/services/proto-common/src/main/proto \
-  --plugin=protoc-gen-ts=./node_modules/.bin/protoc-gen-ts \
-  --plugin=protoc-gen-js=./node_modules/.bin/protoc-gen-js \
-  --plugin=protoc-gen-grpc-web=./protoc-gen-grpc-web \
-  --js_out=import_style=commonjs,binary:src/proto \
-  --ts_out=service=grpc-web:src/proto \
+  --plugin=protoc-gen-ts=./node_modules/@protobuf-ts/plugin/bin/protoc-gen-ts \
+  --ts_out=src/proto \
+  --ts_opt=service_type=grpc-web \
   ../backend/services/proto-common/src/main/proto/*.proto

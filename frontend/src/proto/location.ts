@@ -507,6 +507,7 @@ export const Ack = new Ack$Type();
  */
 export const LocationService = new ServiceType("lastmile.location.LocationService", [
     { name: "StreamDriverTelemetry", clientStreaming: true, options: {}, I: DriverTelemetry, O: Ack },
+    { name: "UpdateDriverLocation", options: {}, I: DriverTelemetry, O: Ack },
     { name: "GetDriverSnapshot", options: {}, I: DriverId, O: DriverSnapshot },
     { name: "GetDriverEta", options: {}, I: DriverEtaRequest, O: DriverEta }
 ]);

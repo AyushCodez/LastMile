@@ -69,7 +69,7 @@ static_resources:
                   address:
                     socket_address:
                       address: user-service
-                      port_value: 9090
+                      port_value: 9091
     - name: rider_service
       connect_timeout: 0.25s
       type: LOGICAL_DNS
@@ -83,7 +83,7 @@ static_resources:
                   address:
                     socket_address:
                       address: rider-service
-                      port_value: 9091
+                      port_value: 9093
     - name: driver_service
       connect_timeout: 0.25s
       type: LOGICAL_DNS
@@ -111,7 +111,7 @@ static_resources:
                   address:
                     socket_address:
                       address: location-service
-                      port_value: 9093
+                      port_value: 9094
     - name: station_service
       connect_timeout: 0.25s
       type: LOGICAL_DNS
@@ -139,7 +139,7 @@ static_resources:
                   address:
                     socket_address:
                       address: trip-service
-                      port_value: 9098
+                      port_value: 9096
     - name: matching_service
       connect_timeout: 0.25s
       type: LOGICAL_DNS
@@ -167,4 +167,4 @@ static_resources:
                   address:
                     socket_address:
                       address: notification-service
-                      port_value: 9096
+                      port_value: 9098

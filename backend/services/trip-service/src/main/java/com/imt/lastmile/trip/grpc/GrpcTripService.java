@@ -29,7 +29,7 @@ public class GrpcTripService extends TripServiceGrpc.TripServiceImplBase {
         request.getRouteId(),
         request.getStationAreaId(),
         request.getDestinationAreaId(),
-        request.getRiderIdsList(),
+        request.getRiderIdsList().stream().distinct().toList(),
         sched);
     repo.save(t);
     responseObserver.onNext(toProto(t));

@@ -6,6 +6,7 @@ import "google/protobuf/timestamp.proto";
 
 service LocationService {
   rpc StreamDriverTelemetry(stream DriverTelemetry) returns (Ack);
+  rpc UpdateDriverLocation(DriverTelemetry) returns (Ack);
   rpc GetDriverSnapshot(DriverId) returns (DriverSnapshot);
   rpc GetDriverEta(DriverEtaRequest) returns (DriverEta);
 }

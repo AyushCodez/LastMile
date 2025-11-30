@@ -85,6 +85,25 @@ public class GrpcLocationService extends LocationServiceGrpc.LocationServiceImpl
   }
 
   @Override
+  public void updateDriverLocation(DriverTelemetry telemetry, StreamObserver<Ack> responseObserver) {
+    Instant ts = telemetry.hasTs()
+        ? Instant.ofEpochSecond(telemetry.getTs().getSeconds(), telemetry.getTs().getNanos())
+        : Instant.now();
+    DriverTelemetryEntity entity = repo.findByDriverId(telemetry.getDriverId())
+        .map(existing -> {
+          existing.update(telemetry.getRouteId(), telemetry.getCurrentAreaId(), telemetry.getOccupancy(), ts);
+          return existing;
+        })
+        .orElseGet(() -> new DriverTelemetryEntity(
+            telemetry.getDriverId(), telemetry.getRouteId(), telemetry.getCurrentAreaId(), telemetry.getOccupancy(), ts));
+    repo.save(entity);
+    evaluateStations(telemetry, ts);
+    
+    responseObserver.onNext(Ack.newBuilder().setOk(true).setMsg("location updated").build());
+    responseObserver.onCompleted();
+  }
+
+  @Override
   public void getDriverSnapshot(lastmile.location.DriverId request, StreamObserver<DriverSnapshot> responseObserver) {
     Optional<DriverTelemetryEntity> opt = repo.findByDriverId(request.getId());
     if (opt.isEmpty()) {

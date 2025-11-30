@@ -23,6 +23,10 @@ export interface ILocationServiceClient {
      */
     streamDriverTelemetry(options?: RpcOptions): ClientStreamingCall<DriverTelemetry, Ack>;
     /**
+     * @generated from protobuf rpc: UpdateDriverLocation
+     */
+    updateDriverLocation(input: DriverTelemetry, options?: RpcOptions): UnaryCall<DriverTelemetry, Ack>;
+    /**
      * @generated from protobuf rpc: GetDriverSnapshot
      */
     getDriverSnapshot(input: DriverId, options?: RpcOptions): UnaryCall<DriverId, DriverSnapshot>;
@@ -48,17 +52,24 @@ export class LocationServiceClient implements ILocationServiceClient, ServiceInf
         return stackIntercept<DriverTelemetry, Ack>("clientStreaming", this._transport, method, opt);
     }
     /**
+     * @generated from protobuf rpc: UpdateDriverLocation
+     */
+    updateDriverLocation(input: DriverTelemetry, options?: RpcOptions): UnaryCall<DriverTelemetry, Ack> {
+        const method = this.methods[1], opt = this._transport.mergeOptions(options);
+        return stackIntercept<DriverTelemetry, Ack>("unary", this._transport, method, opt, input);
+    }
+    /**
      * @generated from protobuf rpc: GetDriverSnapshot
      */
     getDriverSnapshot(input: DriverId, options?: RpcOptions): UnaryCall<DriverId, DriverSnapshot> {
-        const method = this.methods[1], opt = this._transport.mergeOptions(options);
+        const method = this.methods[2], opt = this._transport.mergeOptions(options);
         return stackIntercept<DriverId, DriverSnapshot>("unary", this._transport, method, opt, input);
     }
     /**
      * @generated from protobuf rpc: GetDriverEta
      */
     getDriverEta(input: DriverEtaRequest, options?: RpcOptions): UnaryCall<DriverEtaRequest, DriverEta> {
-        const method = this.methods[2], opt = this._transport.mergeOptions(options);
+        const method = this.methods[3], opt = this._transport.mergeOptions(options);
         return stackIntercept<DriverEtaRequest, DriverEta>("unary", this._transport, method, opt, input);
     }
 }

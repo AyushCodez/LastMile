@@ -17,6 +17,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - lastmile-network
 
   redis:
     image: redis:7-alpine
@@ -28,6 +30,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - lastmile-network
 
   matching-service:
     build:
@@ -48,6 +52,8 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+    networks:
+      - lastmile-network
 
   rider-service:
     build:
@@ -72,6 +78,8 @@ services:
         condition: service_healthy
       matching-service:
         condition: service_started
+    networks:
+      - lastmile-network
 
   driver-service:
     build:
@@ -93,6 +101,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - lastmile-network
 
   location-service:
     build:
@@ -116,6 +126,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - lastmile-network
 
   station-service:
     build:
@@ -137,6 +149,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - lastmile-network
 
   trip-service:
     build:
@@ -158,6 +172,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - lastmile-network
 
   user-service:
     build:
@@ -179,6 +195,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - lastmile-network
 
   notification-service:
     build:
@@ -189,11 +207,19 @@ services:
     container_name: notification-service
     environment:
       SPRING_PROFILES_ACTIVE: docker
+      DB_URL: jdbc:postgresql://postgres:5432/lastmile
+      DB_USER: postgres
+      DB_PASSWORD: postgres
       SERVER_PORT: 8088
       GRPC_PORT: 9098
     ports:
       - "8088:8088"
       - "9098:9098"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - lastmile-network
 
   envoy:
     image: envoyproxy/envoy:v1.29-latest

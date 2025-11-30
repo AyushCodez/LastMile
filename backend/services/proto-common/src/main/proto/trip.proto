@@ -8,6 +8,7 @@ service TripService {
   rpc CreateTrip(CreateTripRequest) returns (Trip);
   rpc UpdateTripStatus(UpdateTripRequest) returns (Trip);
   rpc GetTrip(TripId) returns (Trip);
+  rpc GetTrips(GetTripsRequest) returns (GetTripsResponse);
 }
 
 message CreateTripRequest {
@@ -32,3 +33,12 @@ message Trip {
 
 message UpdateTripRequest { string trip_id = 1; string status = 2; }
 message TripId { string id = 1; }
+
+message GetTripsRequest {
+  string driver_id = 1;
+  string rider_id = 2;
+}
+
+message GetTripsResponse {
+  repeated Trip trips = 1;
+}

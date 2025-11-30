@@ -31,7 +31,7 @@ public class Trip {
   @Column(name = "scheduled_departure", nullable = false)
   private Instant scheduledDeparture;
 
-  @ElementCollection
+  @ElementCollection(fetch = FetchType.EAGER)
   @CollectionTable(name = "trip_riders", joinColumns = @JoinColumn(name = "trip_id"))
   @Column(name = "rider_user_id")
   private List<String> riderUserIds = new ArrayList<>();

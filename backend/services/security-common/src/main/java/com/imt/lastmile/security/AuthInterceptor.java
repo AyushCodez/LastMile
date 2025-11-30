@@ -38,7 +38,9 @@ public class AuthInterceptor implements ServerInterceptor {
       // But gRPC interceptors are global. We need a way to exclude login.
       // Allow unauthenticated access to login/register
       String methodName = call.getMethodDescriptor().getFullMethodName();
-      if (methodName.endsWith("/Authenticate") || methodName.endsWith("/CreateUser")) {
+      if (methodName.endsWith("/Authenticate") || 
+          methodName.endsWith("/CreateUser") || 
+          methodName.startsWith("grpc.reflection")) {
          return next.startCall(call, headers);
       }
       

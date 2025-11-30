@@ -69,4 +69,28 @@ public class GrpcRiderService extends RiderServiceGrpc.RiderServiceImplBase {
       .build());
     responseObserver.onCompleted();
   }
+
+  @net.devh.boot.grpc.client.inject.GrpcClient("trip-service")
+  private lastmile.trip.TripServiceGrpc.TripServiceBlockingStub tripClient;
+
+  @Override
+  public void getRideHistory(lastmile.rider.GetRideHistoryRequest request, StreamObserver<lastmile.rider.RideHistoryResponse> responseObserver) {
+    try {
+      lastmile.trip.GetTripsResponse tripsResp = tripClient.getTrips(lastmile.trip.GetTripsRequest.newBuilder()
+          .setRiderId(request.getUserId())
+          .build());
+      
+      java.util.List<RideStatus> history = tripsResp.getTripsList().stream().map(t -> RideStatus.newBuilder()
+          .setTripId(t.getTripId())
+          .setStatus(RideStatus.Status.valueOf(t.getStatus())) // Assuming status strings match enum names
+          .setStationAreaId(t.getStationAreaId())
+          .setDestinationAreaId(t.getDestinationAreaId())
+          .build()).toList();
+          
+      responseObserver.onNext(lastmile.rider.RideHistoryResponse.newBuilder().addAllRides(history).build());
+      responseObserver.onCompleted();
+    } catch (Exception e) {
+      responseObserver.onError(e);
+    }
+  }
 }

@@ -168,6 +168,7 @@ public class GrpcLocationService extends LocationServiceGrpc.LocationServiceImpl
     int capacity = driverCapacityCache.getOrDefault(telemetry.getDriverId(), 0);
     int seatsAvailable = Math.max(capacity - telemetry.getOccupancy(), 0);
     if (seatsAvailable <= 0) {
+      log.info("Driver {} is FULL (Occupancy {}/{}), skipping match.", telemetry.getDriverId(), telemetry.getOccupancy(), capacity);
       return;
     }
 

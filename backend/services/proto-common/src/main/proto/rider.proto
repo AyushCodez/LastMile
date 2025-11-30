@@ -7,6 +7,7 @@ import "google/protobuf/timestamp.proto"; // common.proto removed (unused)
 service RiderService {
   rpc RegisterRideIntent(RegisterRideIntentRequest) returns (RideIntentResponse);
   rpc GetRideStatus(RideId) returns (RideStatus);
+  rpc GetRideHistory(GetRideHistoryRequest) returns (RideHistoryResponse);
 }
 
 message RegisterRideIntentRequest {
@@ -25,4 +26,12 @@ message RideStatus {
   string trip_id = 3;
   string destination_area_id = 4;
   string station_area_id = 5;
+}
+
+message GetRideHistoryRequest {
+  string user_id = 1;
+}
+
+message RideHistoryResponse {
+  repeated RideStatus rides = 1;
 }

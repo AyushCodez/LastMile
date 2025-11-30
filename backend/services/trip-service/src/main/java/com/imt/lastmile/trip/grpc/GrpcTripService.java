@@ -104,6 +104,24 @@ public class GrpcTripService extends TripServiceGrpc.TripServiceImplBase {
     responseObserver.onCompleted();
   }
 
+  @Override
+  public void getTrips(lastmile.trip.GetTripsRequest request, StreamObserver<lastmile.trip.GetTripsResponse> responseObserver) {
+    java.util.List<Trip> trips;
+    if (!request.getDriverId().isEmpty()) {
+      trips = repo.findByDriverId(request.getDriverId());
+    } else if (!request.getRiderId().isEmpty()) {
+      trips = repo.findByRiderUserIdsContaining(request.getRiderId());
+    } else {
+      trips = java.util.Collections.emptyList();
+    }
+    
+    lastmile.trip.GetTripsResponse response = lastmile.trip.GetTripsResponse.newBuilder()
+        .addAllTrips(trips.stream().map(this::toProto).toList())
+        .build();
+    responseObserver.onNext(response);
+    responseObserver.onCompleted();
+  }
+
   private lastmile.trip.Trip toProto(Trip t) {
     Timestamp departure = toTimestamp(t.getScheduledDeparture());
     lastmile.trip.Trip.Builder builder = lastmile.trip.Trip.newBuilder()

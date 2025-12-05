@@ -6,15 +6,12 @@ import { RequireAuth } from './components/auth/RequireAuth';
 import { DashboardLayout } from './components/layout/DashboardLayout';
 
 // Driver Pages
-import { DriverHomePage } from './pages/driver/DriverHome';
-import { DriverProfilePage } from './pages/driver/DriverProfile';
-import { RouteManagerPage } from './pages/driver/RouteManager';
-import { ActiveRoutePage } from './pages/driver/ActiveRoute';
-
-// Rider Pages
-import { RiderHomePage } from './pages/rider/RiderHome';
-import { RequestRidePage } from './pages/rider/RequestRide';
-import { RideHistoryPage } from './pages/rider/RideHistory';
+import { Overview } from './pages/driver/Overview';
+import { RouteDesigner } from './pages/driver/RouteDesigner';
+import { ActiveRoutes } from './pages/driver/ActiveRoutes';
+import { Profile } from './pages/driver/Profile';
+import { TestStation } from './pages/TestStation';
+import { RiderDashboard } from './pages/RiderDashboard';
 
 import { DriverLayout } from './pages/driver/DriverLayout';
 import { RiderLayout } from './pages/rider/RiderLayout';
@@ -33,9 +30,7 @@ function App() {
               <RiderLayout />
             </RequireAuth>
           }>
-            <Route index element={<RiderHomePage />} />
-            <Route path="request" element={<RequestRidePage />} />
-            <Route path="history" element={<RideHistoryPage />} />
+            <Route index element={<RiderDashboard />} />
           </Route>
 
           {/* Driver Routes */}
@@ -44,12 +39,11 @@ function App() {
               <DriverLayout />
             </RequireAuth>
           }>
-            <Route index element={<DriverHomePage />} />
-            <Route path="routes" element={<RouteManagerPage />} />
-            <Route path="active" element={<ActiveRoutePage />} />
-            <Route path="profile" element={<DriverProfilePage />} />
+            <Route index element={<Overview />} />
+            <Route path="create-route" element={<RouteDesigner />} />
+            <Route path="active-routes" element={<ActiveRoutes />} />
+            <Route path="profile" element={<Profile />} />
           </Route>
-
           <Route path="/" element={<Navigate to="/login" replace />} />
         </Routes>
       </Router>

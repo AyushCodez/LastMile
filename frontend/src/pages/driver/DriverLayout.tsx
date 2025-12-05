@@ -3,9 +3,9 @@ import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { DriverNotificationProvider } from '../../context/DriverNotificationContext';
 
 const driverNavItems = [
-    { label: 'Home', path: '/driver/home' },
-    { label: 'My Routes', path: '/driver/routes' },
-    { label: 'Active Route', path: '/driver/active' },
+    { label: 'Overview', path: '/driver' },
+    { label: 'Create Route', path: '/driver/create-route' },
+    { label: 'Active Routes', path: '/driver/active-routes' },
     { label: 'Profile', path: '/driver/profile' },
 ];
 

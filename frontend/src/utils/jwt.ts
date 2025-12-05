@@ -6,6 +6,7 @@ export interface DecodedToken {
 
 export const decodeToken = (token: string): DecodedToken | null => {
     try {
+        if (!token || !token.includes('.')) return null;
         const base64Url = token.split('.')[1];
         const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
         const jsonPayload = decodeURIComponent(

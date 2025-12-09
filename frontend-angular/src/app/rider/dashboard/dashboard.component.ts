@@ -8,9 +8,13 @@ import { LocationGrpcService } from '../../core/grpc/location.service';
 import { Area } from '../../../proto/common_pb';
 import { Trip } from '../../../proto/trip_pb';
 import { DriverSnapshot } from '../../../proto/location_pb';
+import { DriverProfile } from '../../../proto/driver_pb';
+import { DriverGrpcService } from '../../driver/driver-grpc.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Subscription, timer } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
+
+import { AuthService } from '../../core/auth/auth.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -25,6 +29,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   loading = false;
   activeTrip: Trip.AsObject | null = null;
   driverLocation: DriverSnapshot.AsObject | null = null;
+  driverProfile: DriverProfile.AsObject | null = null;
 
   private notifSubscription: Subscription | null = null;
   private locSubscription: Subscription | null = null;
@@ -37,7 +42,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
     private tripService: TripGrpcService,
     private locationService: LocationGrpcService,
     private snackBar: MatSnackBar,
-    private authService: import('../../core/auth/auth.service').AuthService // Need auth to get my ID
+    private authService: AuthService,
+    private driverGrpcService: DriverGrpcService
   ) {
     this.rideForm = this.fb.group({
       stationId: ['', Validators.required],
@@ -166,6 +172,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.dashboardState = 'TRIP';
         localStorage.removeItem('lastmile_rider_pending'); // Clear pending state
         this.startTrackingDriver(trip.driverId);
+
+        // Fetch Driver Details
+        this.driverGrpcService.getDriverById(trip.driverId).subscribe({
+          next: (profile) => {
+            this.driverProfile = profile;
+          },
+          error: (err) => console.error('Failed to load driver profile', err)
+        });
       },
       error: (err) => console.error('Failed to load trip', err)
     });

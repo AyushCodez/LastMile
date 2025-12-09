@@ -64,13 +64,27 @@
             <mat-card-subtitle>Status: {{ activeTrip?.status }}</mat-card-subtitle>
         </mat-card-header>
         <mat-card-content>
-            <div class="trip-info">
-                <h3>Driver ID: {{ activeTrip?.driverId }}</h3>
-                <div *ngIf="driverLocation">
+            <div *ngIf="activeTrip" class="trip-info">
+                <h3>Trip #{{ activeTrip.tripId }}</h3>
+                <p class="status">Status: {{ activeTrip.status }}</p>
+
+                <div *ngIf="driverProfile" class="driver-details">
+                    <h4>Driver & Vehicle</h4>
+                    <p><strong>Vehicle:</strong> {{ driverProfile.color }} {{ driverProfile.model }}</p>
+                    <p><strong>Plate:</strong> {{ driverProfile.vehicleNo }}</p>
+                    <p><strong>Capacity:</strong> {{ driverProfile.capacity }} seats</p>
+                </div>
+                <div *ngIf="!driverProfile">
+                    <p><strong>Driver ID:</strong> {{ activeTrip.driverId }}</p>
+                    <p><em>Loading driver details...</em></p>
+                </div>
+
+                <div *ngIf="driverLocation" class="location-info">
                     <h4>Current Location</h4>
                     <p>Area: {{ driverLocation.currentAreaId }}</p>
-                    <p>Occupancy: {{ driverLocation.occupancy }}</p>
-                    <p>Last Update: {{ driverLocation.ts?.seconds | date:'mediumTime' }}</p>
+                    <p>Occupancy: {{ driverLocation.occupancy }} / {{ driverProfile?.capacity || '?' }}</p>
+                    <p class="timestamp">Last Update: {{ (driverLocation.ts?.seconds || 0) * 1000 | date:'mediumTime' }}
+                    </p>
                 </div>
                 <div *ngIf="!driverLocation">
                     <p><i>Fetching driver location...</i></p>

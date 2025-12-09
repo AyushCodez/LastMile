@@ -46,6 +46,11 @@ public class RiderIntentStore {
    */
   public List<RiderIntent> takeMatching(String stationAreaId, String destinationAreaId, int limit, int driverEtaMinutes) {
     String key = getKey(stationAreaId);
+    
+    // Cleanup expired intents (older than 30 minutes)
+    double cutoff = Instant.now().minusSeconds(1800).getEpochSecond();
+    redisTemplate.opsForZSet().removeRangeByScore(key, 0, cutoff);
+    
     Instant driverArrival = Instant.now().plusSeconds(driverEtaMinutes * 60L);
     return executeTransaction(key, stationAreaId, destinationAreaId, limit, driverArrival);
   }

@@ -56,6 +56,21 @@ export class DriverGrpcService {
         }).pipe(map(res => res.toObject()));
     }
 
+    getDriverById(driverId: string): Observable<DriverProfile.AsObject> {
+        const req = new DriverId();
+        req.setId(driverId);
+
+        return new Observable<DriverProfile>((observer) => {
+            this.driverClient.getDriver(req, this.authService.getMetadata(), (err, res) => {
+                if (err) observer.error(err);
+                else if (res) {
+                    observer.next(res);
+                    observer.complete();
+                }
+            });
+        }).pipe(map(res => res.toObject()));
+    }
+
     registerRoute(stops: RouteStop[]): Observable<RoutePlan.AsObject> {
         return this.getDriverProfile().pipe(
             switchMap((profile: DriverProfile.AsObject) => {

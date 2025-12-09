@@ -10,13 +10,19 @@
             </div>
 
             <mat-list *ngIf="rides.length > 0">
-                <mat-list-item *ngFor="let ride of rides">
+                <mat-list-item *ngFor="let ride of rides" class="ride-item">
                     <mat-icon matListItemIcon>history</mat-icon>
                     <div matListItemTitle>
                         {{ getAreaName(ride.stationAreaId) }} to {{ getAreaName(ride.destinationAreaId) }}
                     </div>
                     <div matListItemLine>
                         Status: {{ getStatusLabel(ride.status) }}
+                    </div>
+                    <div matListItemLine *ngIf="driverDetails.get(ride.intentId) as driver">
+                        Driver: {{ driver.color }} {{ driver.model }} ({{ driver.vehicleNo }})
+                    </div>
+                    <div matListItemLine *ngIf="!driverDetails.get(ride.intentId) && ride.tripId">
+                        <i>Loading driver info...</i>
                     </div>
                 </mat-list-item>
             </mat-list>

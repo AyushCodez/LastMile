@@ -48,24 +48,23 @@ export class DashboardComponent implements OnInit, OnDestroy {
       this.handleNotification(notif);
     });
 
+    // Subscribe to matches ONCE (Backend broadcasts all events, we filter client-side)
+    this.matchingService.subscribeMatches('');
+
     // Connect to matching events
     this.matchSubscription = this.matchingService.matchEvents$.subscribe({
       next: (event) => {
         console.log('Received MatchEvent:', event);
         if (event.eventId.startsWith('new-rider')) {
-          // Check if it's for our current station or the next one if we are moving
-          const currentStop = this.activeRoute?.stopsList[this.currentStopIndex];
-          const nextStop = this.activeRoute?.stopsList[this.currentStopIndex + 1];
+          if (!this.activeRoute) return;
 
-          let isRelevant = false;
-          if (currentStop && event.stationAreaId === currentStop.areaId) {
-            isRelevant = true;
-          } else if (this.isMoving && nextStop && event.stationAreaId === nextStop.areaId) {
-            isRelevant = true;
-          }
+          // Check if the event station is in our upcoming stops
+          // We include the current stop and all future stops
+          const upcomingStops = this.activeRoute.stopsList.slice(this.currentStopIndex);
+          const isRelevant = upcomingStops.some(stop => stop.areaId === event.stationAreaId);
 
           if (isRelevant) {
-            // New rider arrived at station.
+            // New rider arrived at a relevant station
             this.snackBar.open('New rider waiting at ' + this.getAreaName(event.stationAreaId), 'Check', { duration: 5000 })
               .onAction().subscribe(() => {
                 this.checkMatches(event.stationAreaId);
@@ -128,18 +127,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
       currentStop.areaId,
       this.occupancy
     ).subscribe();
-
-    // Also subscribe to matching events for this station
-    this.matchingService.subscribeMatches(currentStop.areaId);
-
-    // If moving, maybe subscribe to next station too?
-    // For now, let's just rely on the fact that we might have subscribed to it previously or the backend broadcasts broadly?
-    // Actually backend broadcasts to specific station channel.
-    // So if we are moving to next stop, we should subscribe to it.
-    if (this.currentStopIndex < this.activeRoute.stopsList.length - 1) {
-      const nextStop = this.activeRoute.stopsList[this.currentStopIndex + 1];
-      this.matchingService.subscribeMatches(nextStop.areaId);
-    }
   }
 
   checkMatches(stationId?: string) {

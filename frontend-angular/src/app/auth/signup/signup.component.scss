@@ -1,0 +1,38 @@
+.auth-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    padding: 20px;
+}
+
+mat-card {
+    max-width: 400px;
+    width: 100%;
+}
+
+.full-width {
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.role-selection {
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+mat-radio-group {
+    margin-top: 10px;
+    display: flex;
+    gap: 20px;
+}
+
+.error-message {
+    color: red;
+    margin-bottom: 10px;
+}
+
+mat-card-actions {
+    justify-content: center;
+}

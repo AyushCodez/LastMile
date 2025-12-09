@@ -1,0 +1,43 @@
+<div class="container">
+    <mat-card>
+        <mat-card-header>
+            <mat-card-title>Create New Route</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+            <div class="route-stops">
+                <mat-list>
+                    <mat-list-item *ngFor="let stop of selectedStops; let i = index">
+                        <mat-icon matListItemIcon>place</mat-icon>
+                        <div matListItemTitle>
+                            Stop {{ i + 1 }}: {{ getAreaName(stop.areaId) }}
+                        </div>
+                        <div matListItemLine>
+                            {{ stop.isStation ? 'Station' : 'Area' }} • Arrival: +{{ stop.arrivalOffset }} min
+                        </div>
+                    </mat-list-item>
+                </mat-list>
+            </div>
+
+            <div class="add-stop-section">
+                <mat-form-field appearance="fill" class="full-width">
+                    <mat-label>{{ selectedStops.length === 0 ? 'Select First Stop' : 'Select Next Stop' }}</mat-label>
+                    <mat-select (selectionChange)="addStop($event.value)">
+                        <mat-option *ngFor="let area of availableNextStops" [value]="area.id">
+                            {{ area.name }}
+                        </mat-option>
+                    </mat-select>
+                </mat-form-field>
+                <p *ngIf="selectedStops.length > 0" class="hint">
+                    Only connected areas are shown.
+                </p>
+            </div>
+
+            <div class="actions">
+                <button mat-button (click)="reset()" [disabled]="selectedStops.length === 0">Reset</button>
+                <button mat-raised-button color="primary" (click)="saveRoute()" [disabled]="selectedStops.length < 2">
+                    Save Route
+                </button>
+            </div>
+        </mat-card-content>
+    </mat-card>
+</div>

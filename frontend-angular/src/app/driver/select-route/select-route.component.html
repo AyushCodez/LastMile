@@ -1,0 +1,26 @@
+<div class="container">
+    <mat-card>
+        <mat-card-header>
+            <mat-card-title>Select Route</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+            <div *ngIf="loading">Loading routes...</div>
+            <div *ngIf="!loading && routes.length === 0">
+                <p>No routes found. Please create a route first.</p>
+                <button mat-raised-button color="primary" routerLink="/driver/create-route">Create Route</button>
+            </div>
+
+            <mat-list *ngIf="routes.length > 0">
+                <mat-list-item *ngFor="let route of routes">
+                    <mat-icon matListItemIcon>alt_route</mat-icon>
+                    <div matListItemTitle>{{ getRouteDescription(route) }}</div>
+                    <div matListItemLine>Created: {{ route.createdAt?.seconds ? (route.createdAt!.seconds * 1000 | date)
+                        : 'N/A' }}</div>
+                    <button mat-icon-button (click)="selectRoute(route)">
+                        <mat-icon>arrow_forward</mat-icon>
+                    </button>
+                </mat-list-item>
+            </mat-list>
+        </mat-card-content>
+    </mat-card>
+</div>

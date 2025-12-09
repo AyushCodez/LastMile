@@ -1,0 +1,29 @@
+.container {
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+}
+
+mat-card {
+    max-width: 500px;
+    width: 100%;
+}
+
+.profile-details {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 5px;
+}
+
+.label {
+    font-weight: 500;
+    color: gray;
+}

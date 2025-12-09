@@ -27,9 +27,11 @@ import lastmile.driver.RouteStop;
 import lastmile.driver.UpdateRouteRequest;
 import net.devh.boot.grpc.server.service.GrpcService;
 import org.springframework.transaction.annotation.Transactional;
+import lastmile.UserId;
 
 @GrpcService
 public class GrpcDriverService extends DriverServiceGrpc.DriverServiceImplBase {
+  // ... fields and constructor ...
   private final DriverRepository driverRepo;
   private final RouteRepository routeRepo;
   private final AreaRepository areaRepo;
@@ -49,9 +51,31 @@ public class GrpcDriverService extends DriverServiceGrpc.DriverServiceImplBase {
   @Override
   @Transactional
   public void registerDriver(RegisterDriverRequest request, StreamObserver<DriverProfile> responseObserver) {
-    Driver d = new Driver(request.getUserId(), request.getVehicleNo(), request.getCapacity());
-    d = driverRepo.save(d);
+    List<Driver> existing = driverRepo.findByUserId(request.getUserId());
+    Driver d;
+    if (!existing.isEmpty()) {
+      d = existing.get(0);
+      d.setVehicleNo(request.getVehicleNo());
+      d.setCapacity(request.getCapacity());
+      d.setModel(request.getModel());
+      d.setColor(request.getColor());
+      d = driverRepo.save(d);
+    } else {
+      d = new Driver(request.getUserId(), request.getVehicleNo(), request.getCapacity(), request.getModel(), request.getColor());
+      d = driverRepo.save(d);
+    }
     responseObserver.onNext(toProfile(d));
+    responseObserver.onCompleted();
+  }
+
+  @Override
+  public void getDriverByUserId(UserId request, StreamObserver<DriverProfile> responseObserver) {
+    List<Driver> drivers = driverRepo.findByUserId(request.getId());
+    if (drivers.isEmpty()) {
+       responseObserver.onNext(DriverProfile.newBuilder().build());
+    } else {
+       responseObserver.onNext(toProfile(drivers.get(0)));
+    }
     responseObserver.onCompleted();
   }
 
@@ -134,6 +158,8 @@ public class GrpcDriverService extends DriverServiceGrpc.DriverServiceImplBase {
         .setUserId(driver.getUserId())
         .setVehicleNo(driver.getVehicleNo())
         .setCapacity(driver.getCapacity())
+        .setModel(driver.getModel() != null ? driver.getModel() : "")
+        .setColor(driver.getColor() != null ? driver.getColor() : "")
         .addAllRoutes(plans)
         .build();
   }

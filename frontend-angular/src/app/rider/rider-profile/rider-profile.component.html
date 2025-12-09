@@ -1,0 +1,27 @@
+<div class="container">
+    <mat-card>
+        <mat-card-header>
+            <mat-card-title>Rider Profile</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+            <div *ngIf="loading">Loading...</div>
+            <div *ngIf="profile" class="profile-details">
+                <div class="detail-item">
+                    <span class="label">Name:</span>
+                    <span class="value">{{ profile.name }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="label">Email:</span>
+                    <span class="value">{{ profile.email }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="label">Role:</span>
+                    <span class="value">{{ profile.role }}</span>
+                </div>
+            </div>
+            <div *ngIf="!loading && !profile">
+                <p>Profile not found.</p>
+            </div>
+        </mat-card-content>
+    </mat-card>
+</div>

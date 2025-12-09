@@ -1,0 +1,68 @@
+<div class="container">
+    <div *ngIf="!activeRoute" class="no-trip">
+        <mat-card>
+            <mat-card-content>
+                <h2>No Active Trip</h2>
+                <p>Please select a route to start driving.</p>
+                <button mat-raised-button color="primary" routerLink="/driver/select-route">Select Route</button>
+            </mat-card-content>
+        </mat-card>
+    </div>
+
+    <div *ngIf="activeRoute" class="trip-status">
+        <mat-card>
+            <mat-card-header>
+                <mat-card-title>Current Trip</mat-card-title>
+                <mat-card-subtitle>
+                    Route: {{ getAreaName(activeRoute.stopsList[0].areaId) }} to {{
+                    getAreaName(activeRoute.stopsList[activeRoute.stopsList.length - 1].areaId) }}
+                </mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+                <div class="status-info">
+                    <div class="status-item">
+                        <span class="label">Status:</span>
+                        <span class="value">{{ isMoving ? 'Moving to Next Stop' : 'At Stop' }}</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="label">Current/Next Stop:</span>
+                        <span class="value">
+                            {{ isMoving ? getAreaName(activeRoute.stopsList[currentStopIndex + 1].areaId || 'End') :
+                            getAreaName(activeRoute.stopsList[currentStopIndex].areaId) }}
+                        </span>
+                    </div>
+                    <div class="status-item">
+                        <span class="label">Occupancy:</span>
+                        <span class="value">{{ occupancy }} / {{ driverProfile?.capacity }}</span>
+                    </div>
+                </div>
+
+                <div class="actions">
+                    <button mat-raised-button color="primary" (click)="moveToNext()"
+                        [disabled]="currentStopIndex >= activeRoute.stopsList.length - 1 && !isMoving">
+                        {{ isMoving ? 'Arrived at ' + getAreaName(activeRoute.stopsList[currentStopIndex + 1].areaId ||
+                        'End') : 'Move to Next Stop' }}
+                    </button>
+                    <button mat-stroked-button color="warn" (click)="endTrip()">End Trip</button>
+                </div>
+            </mat-card-content>
+        </mat-card>
+
+        <mat-card class="stops-list">
+            <mat-card-header>
+                <mat-card-title>Stops</mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+                <mat-list>
+                    <mat-list-item *ngFor="let stop of activeRoute.stopsList; let i = index"
+                        [class.active]="i === currentStopIndex">
+                        <mat-icon matListItemIcon>{{ i < currentStopIndex ? 'check_circle' : (i===currentStopIndex
+                                ? 'place' : 'radio_button_unchecked' ) }}</mat-icon>
+                                <div matListItemTitle>{{ getAreaName(stop.areaId) }}</div>
+                                <div matListItemLine>Offset: +{{ stop.arrivalOffsetMinutes }} min</div>
+                    </mat-list-item>
+                </mat-list>
+            </mat-card-content>
+        </mat-card>
+    </div>
+</div>

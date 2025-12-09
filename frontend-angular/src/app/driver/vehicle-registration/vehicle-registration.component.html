@@ -1,0 +1,46 @@
+<div class="container">
+    <mat-card>
+        <mat-card-header>
+            <mat-card-title>Vehicle Registration</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+            <form [formGroup]="vehicleForm" (ngSubmit)="onSubmit()">
+                <mat-form-field appearance="fill" class="full-width">
+                    <mat-label>Vehicle Number</mat-label>
+                    <input matInput formControlName="vehicleNo" placeholder="Ex. KA-01-AB-1234">
+                    <mat-error *ngIf="vehicleForm.get('vehicleNo')?.hasError('required')">
+                        Vehicle Number is required
+                    </mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="fill" class="full-width">
+                    <mat-label>Capacity</mat-label>
+                    <input matInput type="number" formControlName="capacity">
+                    <mat-error *ngIf="vehicleForm.get('capacity')?.hasError('required')">
+                        Capacity is required
+                    </mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="fill" class="full-width">
+                    <mat-label>Model</mat-label>
+                    <input matInput formControlName="model" placeholder="Ex. Maruti Suzuki Ritz">
+                    <mat-error *ngIf="vehicleForm.get('model')?.hasError('required')">
+                        Model is required
+                    </mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="fill" class="full-width">
+                    <mat-label>Color</mat-label>
+                    <input matInput formControlName="color" placeholder="Ex. Red">
+                    <mat-error *ngIf="vehicleForm.get('color')?.hasError('required')">
+                        Color is required
+                    </mat-error>
+                </mat-form-field>
+
+                <button mat-raised-button color="primary" type="submit" [disabled]="vehicleForm.invalid || loading">
+                    {{ loading ? 'Saving...' : 'Save Details' }}
+                </button>
+            </form>
+        </mat-card-content>
+    </mat-card>
+</div>

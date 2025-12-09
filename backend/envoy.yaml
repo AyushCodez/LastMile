@@ -57,8 +57,9 @@ static_resources:
 
   clusters:
     - name: user_service
-      connect_timeout: 0.25s
-      type: LOGICAL_DNS
+      connect_timeout: 10s
+      type: STRICT_DNS
+      dns_lookup_family: V4_ONLY
       http2_protocol_options: {}
       lb_policy: ROUND_ROBIN
       load_assignment:
@@ -71,8 +72,9 @@ static_resources:
                       address: user-service
                       port_value: 9091
     - name: rider_service
-      connect_timeout: 0.25s
-      type: LOGICAL_DNS
+      connect_timeout: 10s
+      type: STRICT_DNS
+      dns_lookup_family: V4_ONLY
       http2_protocol_options: {}
       lb_policy: ROUND_ROBIN
       load_assignment:
@@ -85,8 +87,9 @@ static_resources:
                       address: rider-service
                       port_value: 9093
     - name: driver_service
-      connect_timeout: 0.25s
-      type: LOGICAL_DNS
+      connect_timeout: 10s
+      type: STRICT_DNS
+      dns_lookup_family: V4_ONLY
       http2_protocol_options: {}
       lb_policy: ROUND_ROBIN
       load_assignment:
@@ -99,8 +102,9 @@ static_resources:
                       address: driver-service
                       port_value: 9092
     - name: location_service
-      connect_timeout: 0.25s
-      type: LOGICAL_DNS
+      connect_timeout: 10s
+      type: STRICT_DNS
+      dns_lookup_family: V4_ONLY
       http2_protocol_options: {}
       lb_policy: ROUND_ROBIN
       load_assignment:
@@ -113,8 +117,9 @@ static_resources:
                       address: location-service
                       port_value: 9094
     - name: station_service
-      connect_timeout: 0.25s
-      type: LOGICAL_DNS
+      connect_timeout: 10s
+      type: STRICT_DNS
+      dns_lookup_family: V4_ONLY
       http2_protocol_options: {}
       lb_policy: ROUND_ROBIN
       load_assignment:
@@ -127,8 +132,9 @@ static_resources:
                       address: station-service
                       port_value: 9095
     - name: trip_service
-      connect_timeout: 0.25s
-      type: LOGICAL_DNS
+      connect_timeout: 10s
+      type: STRICT_DNS
+      dns_lookup_family: V4_ONLY
       http2_protocol_options: {}
       lb_policy: ROUND_ROBIN
       load_assignment:
@@ -141,8 +147,9 @@ static_resources:
                       address: trip-service
                       port_value: 9096
     - name: matching_service
-      connect_timeout: 0.25s
-      type: LOGICAL_DNS
+      connect_timeout: 10s
+      type: STRICT_DNS
+      dns_lookup_family: V4_ONLY
       http2_protocol_options: {}
       lb_policy: ROUND_ROBIN
       load_assignment:
@@ -155,8 +162,9 @@ static_resources:
                       address: matching-service
                       port_value: 9097
     - name: notification_service
-      connect_timeout: 0.25s
-      type: LOGICAL_DNS
+      connect_timeout: 10s
+      type: STRICT_DNS
+      dns_lookup_family: V4_ONLY
       http2_protocol_options: {}
       lb_policy: ROUND_ROBIN
       load_assignment:

@@ -16,7 +16,9 @@ import net.devh.boot.grpc.server.service.GrpcService;
 
 @GrpcService
 public class GrpcMatchingService extends MatchingServiceGrpc.MatchingServiceImplBase {
-  private final RiderIntentStore riderStore;
+  @org.springframework.beans.factory.annotation.Autowired
+  private RiderIntentStore riderStore;
+  
   private final List<StreamObserver<MatchEvent>> subscribers = new CopyOnWriteArrayList<>();
 
   @net.devh.boot.grpc.client.inject.GrpcClient("trip-service")
@@ -25,8 +27,7 @@ public class GrpcMatchingService extends MatchingServiceGrpc.MatchingServiceImpl
   @net.devh.boot.grpc.client.inject.GrpcClient("notification-service")
   private lastmile.notification.NotificationServiceGrpc.NotificationServiceBlockingStub notificationClient;
 
-  public GrpcMatchingService(RiderIntentStore riderStore) {
-    this.riderStore = riderStore;
+  public GrpcMatchingService() {
   }
 
   @Override
@@ -132,6 +133,17 @@ public class GrpcMatchingService extends MatchingServiceGrpc.MatchingServiceImpl
         arrivalTime
     );
     riderStore.add(intent);
+    
+    // Notify subscribers (e.g., drivers) that a new rider has arrived
+    MatchEvent event = MatchEvent.newBuilder()
+      .setEventId("new-rider-" + UUID.randomUUID().toString().substring(0, 8))
+      .setStationAreaId(request.getStationAreaId())
+      .setResult(MatchResult.newBuilder().build()) // Empty result, just a signal
+      .build();
+    subscribers.forEach(sub -> {
+      try { sub.onNext(event); } catch (Exception ignored) { }
+    });
+
     responseObserver.onNext(lastmile.matching.AddRiderIntentResponse.newBuilder().setSuccess(true).setMsg("Intent added").build());
     responseObserver.onCompleted();
   }

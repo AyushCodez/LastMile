@@ -1,0 +1,25 @@
+<div class="container">
+    <mat-card>
+        <mat-card-header>
+            <mat-card-title>Ride History</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+            <div *ngIf="loading">Loading history...</div>
+            <div *ngIf="!loading && rides.length === 0">
+                <p>No rides found.</p>
+            </div>
+
+            <mat-list *ngIf="rides.length > 0">
+                <mat-list-item *ngFor="let ride of rides">
+                    <mat-icon matListItemIcon>history</mat-icon>
+                    <div matListItemTitle>
+                        {{ getAreaName(ride.stationAreaId) }} to {{ getAreaName(ride.destinationAreaId) }}
+                    </div>
+                    <div matListItemLine>
+                        Status: {{ getStatusLabel(ride.status) }}
+                    </div>
+                </mat-list-item>
+            </mat-list>
+        </mat-card-content>
+    </mat-card>
+</div>

@@ -9,7 +9,8 @@ import { DriverProfile, RoutePlan } from '../../../proto/driver_pb';
 import { EvaluateDriverRequest } from '../../../proto/matching_pb';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialog } from '@angular/material/dialog';
-import { Subscription } from 'rxjs';
+import { Subscription, forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { StationService } from '../../core/grpc/station.service';
 
 @Component({
@@ -222,9 +223,47 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   endTrip() {
+    if (!this.driverProfile) {
+      this.finishEndTrip();
+      return;
+    }
+
+    // 1. Get all active trips for this driver
+    this.tripService.getTrips(this.driverProfile.driverId).subscribe({
+      next: (trips) => {
+        const activeTrips = trips.filter(t => t.status !== 'COMPLETED' && t.status !== 'CANCELLED');
+
+        if (activeTrips.length === 0) {
+          this.finishEndTrip();
+          return;
+        }
+
+        // 2. Mark each as COMPLETED
+        const updates = activeTrips.map(t =>
+          this.tripService.updateTripStatus(t.tripId, 'COMPLETED').pipe(
+            catchError(err => {
+              console.error(`Failed to complete trip ${t.tripId}`, err);
+              return of(null);
+            })
+          )
+        );
+
+        forkJoin(updates).subscribe(() => {
+          this.finishEndTrip();
+        });
+      },
+      error: (err) => {
+        console.error('Failed to fetch trips for completion', err);
+        this.finishEndTrip();
+      }
+    });
+  }
+
+  finishEndTrip() {
     this.activeRoute = null;
     this.currentStopIndex = 0;
     this.isMoving = false;
+    this.occupancy = 0;
     this.router.navigate(['/driver/select-route']);
     this.snackBar.open('Trip Ended', 'Close', { duration: 3000 });
   }

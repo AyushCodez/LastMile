@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { LocationServiceClient } from '../../../proto/location_pb_service';
-import { DriverTelemetry, Ack } from '../../../proto/location_pb';
+import { DriverTelemetry, Ack, DriverSnapshot, DriverId } from '../../../proto/location_pb';
 import { AuthService } from '../auth/auth.service';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
@@ -38,5 +38,20 @@ export class LocationGrpcService {
                 }
             });
         }).pipe(map(res => res.toObject()));
+    }
+
+    getDriverSnapshot(driverId: string): Observable<DriverSnapshot.AsObject> {
+        const req = new DriverId();
+        req.setId(driverId);
+
+        return new Observable<DriverSnapshot>((observer) => {
+            this.locationClient.getDriverSnapshot(req, this.authService.getMetadata(), (err, res) => {
+                if (err) observer.error(err);
+                else if (res) {
+                    observer.next(res);
+                    observer.complete();
+                }
+            });
+        }).pipe(map(d => d.toObject()));
     }
 }

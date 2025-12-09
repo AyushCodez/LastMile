@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { TripServiceClient } from '../../../proto/trip_pb_service';
-import { CreateTripRequest, Trip, UpdateTripRequest } from '../../../proto/trip_pb';
+import { CreateTripRequest, Trip, UpdateTripRequest, TripId, GetTripsRequest, GetTripsResponse } from '../../../proto/trip_pb';
 import { AuthService } from '../auth/auth.service';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
@@ -56,5 +56,36 @@ export class TripGrpcService {
                 }
             });
         }).pipe(map(res => res.toObject()));
+    }
+
+    getTrip(tripId: string): Observable<Trip.AsObject> {
+        const req = new TripId();
+        req.setId(tripId);
+
+        return new Observable<Trip>((observer) => {
+            this.tripClient.getTrip(req, this.authService.getMetadata(), (err, res) => {
+                if (err) observer.error(err);
+                else if (res) {
+                    observer.next(res);
+                    observer.complete();
+                }
+            });
+        }).pipe(map(res => res.toObject()));
+    }
+
+    getTrips(driverId: string = '', riderId: string = ''): Observable<Trip.AsObject[]> {
+        const req = new GetTripsRequest();
+        if (driverId) req.setDriverId(driverId);
+        if (riderId) req.setRiderId(riderId);
+
+        return new Observable<GetTripsResponse>((observer) => {
+            this.tripClient.getTrips(req, this.authService.getMetadata(), (err, res) => {
+                if (err) observer.error(err);
+                else if (res) {
+                    observer.next(res);
+                    observer.complete();
+                }
+            });
+        }).pipe(map(res => res.getTripsList().map(t => t.toObject())));
     }
 }

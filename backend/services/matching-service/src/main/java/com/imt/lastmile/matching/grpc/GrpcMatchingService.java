@@ -138,7 +138,10 @@ public class GrpcMatchingService extends MatchingServiceGrpc.MatchingServiceImpl
     MatchEvent event = MatchEvent.newBuilder()
       .setEventId("new-rider-" + UUID.randomUUID().toString().substring(0, 8))
       .setStationAreaId(request.getStationAreaId())
-      .setResult(MatchResult.newBuilder().build()) // Empty result, just a signal
+      .setResult(MatchResult.newBuilder()
+          .setStationAreaId(request.getStationAreaId())
+          .setDestinationAreaId(request.getDestinationAreaId())
+          .build()) // Include params for filtering
       .build();
     subscribers.forEach(sub -> {
       try { sub.onNext(event); } catch (Exception ignored) { }

@@ -1,5 +1,7 @@
-<div class="container">
-    <mat-card>
+<div class="container" [ngSwitch]="dashboardState">
+
+    <!-- IDLE STATE: Request Form -->
+    <mat-card *ngSwitchCase="'IDLE'">
         <mat-card-header>
             <mat-card-title>Request a Ride</mat-card-title>
         </mat-card-header>
@@ -12,9 +14,6 @@
                             {{ station.name }}
                         </mat-option>
                     </mat-select>
-                    <mat-error *ngIf="rideForm.get('stationId')?.hasError('required')">
-                        Pickup Station is required
-                    </mat-error>
                 </mat-form-field>
 
                 <mat-form-field appearance="fill" class="full-width">
@@ -24,9 +23,6 @@
                             {{ area.name }}
                         </mat-option>
                     </mat-select>
-                    <mat-error *ngIf="rideForm.get('destinationId')?.hasError('required')">
-                        Destination is required
-                    </mat-error>
                 </mat-form-field>
 
                 <mat-form-field appearance="fill" class="full-width">
@@ -48,6 +44,38 @@
                     {{ loading ? 'Requesting...' : 'Request Ride' }}
                 </button>
             </form>
+        </mat-card-content>
+    </mat-card>
+
+    <!-- PENDING STATE: Waiting Screen -->
+    <mat-card *ngSwitchCase="'PENDING'" class="pending-card">
+        <mat-card-content class="center-content">
+            <mat-spinner diameter="50"></mat-spinner>
+            <h2>Finding your driver...</h2>
+            <p>Please wait while we match you with a nearby driver.</p>
+            <button mat-stroked-button color="warn" (click)="cancelRequest()">Cancel Request</button>
+        </mat-card-content>
+    </mat-card>
+
+    <!-- TRIP STATE: Active Trip -->
+    <mat-card *ngSwitchCase="'TRIP'" class="trip-card">
+        <mat-card-header>
+            <mat-card-title>Trip #{{ activeTrip?.tripId }}</mat-card-title>
+            <mat-card-subtitle>Status: {{ activeTrip?.status }}</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+            <div class="trip-info">
+                <h3>Driver ID: {{ activeTrip?.driverId }}</h3>
+                <div *ngIf="driverLocation">
+                    <h4>Current Location</h4>
+                    <p>Area: {{ driverLocation.currentAreaId }}</p>
+                    <p>Occupancy: {{ driverLocation.occupancy }}</p>
+                    <p>Last Update: {{ driverLocation.ts?.seconds | date:'mediumTime' }}</p>
+                </div>
+                <div *ngIf="!driverLocation">
+                    <p><i>Fetching driver location...</i></p>
+                </div>
+            </div>
         </mat-card-content>
     </mat-card>
 </div>

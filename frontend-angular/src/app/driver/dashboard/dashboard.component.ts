@@ -61,11 +61,28 @@ export class DashboardComponent implements OnInit, OnDestroy {
           // Check if the event station is in our upcoming stops
           // We include the current stop and all future stops
           const upcomingStops = this.activeRoute.stopsList.slice(this.currentStopIndex);
-          const isRelevant = upcomingStops.some(stop => stop.areaId === event.stationAreaId);
+          const pickupIndex = upcomingStops.findIndex(stop => stop.areaId === event.stationAreaId);
+
+          let isRelevant = false;
+
+          if (pickupIndex !== -1) {
+            // Pickup is valid. Now check destination.
+            const destId = event.result?.destinationAreaId;
+            if (destId) {
+              // Find destination in the stops strictly AFTER the pickup
+              const destIndex = upcomingStops.findIndex((stop, idx) => idx > pickupIndex && stop.areaId === destId);
+              if (destIndex !== -1) {
+                isRelevant = true;
+              }
+            } else {
+              // Relaxed check if destination is missing (backward compatibility)
+              isRelevant = true;
+            }
+          }
 
           if (isRelevant) {
             // New rider arrived at a relevant station
-            this.snackBar.open('New rider waiting at ' + this.getAreaName(event.stationAreaId), 'Check', { duration: 5000 })
+            this.snackBar.open(`New rider at ${this.getAreaName(event.stationAreaId)} to ${this.getAreaName(event.result?.destinationAreaId || 'Unknown')}`, 'Check', { duration: 5000 })
               .onAction().subscribe(() => {
                 this.checkMatches(event.stationAreaId);
               });

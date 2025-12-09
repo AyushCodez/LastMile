@@ -49,17 +49,28 @@ export class DashboardComponent implements OnInit, OnDestroy {
     });
 
     // Connect to matching events
-    this.matchSubscription = this.matchingService.matchEvents$.subscribe(event => {
-      if (event.eventId.startsWith('new-rider')) {
-        // Check if this event is for our current station
-        if (this.activeRoute && this.activeRoute.stopsList[this.currentStopIndex].areaId === event.stationAreaId) {
-          // New rider arrived at station.
-          // If we are at that station, we should refresh or show alert.
-          // For now, just show a generic alert to check for riders.
-          this.snackBar.open('New rider waiting at ' + this.getAreaName(event.stationAreaId), 'Check', { duration: 5000 })
-            .onAction().subscribe(() => {
-              this.checkMatches();
-            });
+    this.matchSubscription = this.matchingService.matchEvents$.subscribe({
+      next: (event) => {
+        console.log('Received MatchEvent:', event);
+        if (event.eventId.startsWith('new-rider')) {
+          // Check if it's for our current station or the next one if we are moving
+          const currentStop = this.activeRoute?.stopsList[this.currentStopIndex];
+          const nextStop = this.activeRoute?.stopsList[this.currentStopIndex + 1];
+
+          let isRelevant = false;
+          if (currentStop && event.stationAreaId === currentStop.areaId) {
+            isRelevant = true;
+          } else if (this.isMoving && nextStop && event.stationAreaId === nextStop.areaId) {
+            isRelevant = true;
+          }
+
+          if (isRelevant) {
+            // New rider arrived at station.
+            this.snackBar.open('New rider waiting at ' + this.getAreaName(event.stationAreaId), 'Check', { duration: 5000 })
+              .onAction().subscribe(() => {
+                this.checkMatches(event.stationAreaId);
+              });
+          }
         }
       }
     });
@@ -120,35 +131,58 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     // Also subscribe to matching events for this station
     this.matchingService.subscribeMatches(currentStop.areaId);
+
+    // If moving, maybe subscribe to next station too?
+    // For now, let's just rely on the fact that we might have subscribed to it previously or the backend broadcasts broadly?
+    // Actually backend broadcasts to specific station channel.
+    // So if we are moving to next stop, we should subscribe to it.
+    if (this.currentStopIndex < this.activeRoute.stopsList.length - 1) {
+      const nextStop = this.activeRoute.stopsList[this.currentStopIndex + 1];
+      this.matchingService.subscribeMatches(nextStop.areaId);
+    }
   }
 
-  checkMatches() {
+  checkMatches(stationId?: string) {
     if (!this.driverProfile || !this.activeRoute) return;
-    const currentStop = this.activeRoute.stopsList[this.currentStopIndex];
+
+    let targetStationId = stationId;
+    if (!targetStationId) {
+      const currentStop = this.activeRoute.stopsList[this.currentStopIndex];
+      targetStationId = currentStop.areaId;
+      // If moving, prefer next stop?
+      if (this.isMoving && this.currentStopIndex < this.activeRoute.stopsList.length - 1) {
+        targetStationId = this.activeRoute.stopsList[this.currentStopIndex + 1].areaId;
+      }
+    }
+
     // Determine destination (next stop or final?)
-    // For now, let's assume destination is the next stop or the end of route.
-    // Actually, matching service takes destinationAreaId.
-    // We should probably pass the *next* stop as destination? Or let the service decide?
-    // Let's pass the next stop's area ID if available.
     let destAreaId = '';
-    if (this.currentStopIndex < this.activeRoute.stopsList.length - 1) {
-      destAreaId = this.activeRoute.stopsList[this.currentStopIndex + 1].areaId;
+    // Find the stop *after* the target station
+    // This is tricky. Let's just say destination is the end of the route for now, or the next stop after target.
+    // If target is current stop, dest is next.
+    // If target is next stop, dest is next-next.
+
+    // Simple logic: Destination is the last stop on the route.
+    if (this.activeRoute.stopsList.length > 0) {
+      destAreaId = this.activeRoute.stopsList[this.activeRoute.stopsList.length - 1].areaId;
     }
 
     const req = new EvaluateDriverRequest();
     req.setDriverId(this.driverProfile.driverId);
     req.setRouteId(this.activeRoute.routeId);
-    req.setStationAreaId(currentStop.areaId);
+    req.setStationAreaId(targetStationId);
     req.setDestinationAreaId(destAreaId);
     req.setSeatsAvailable(4 - this.occupancy);
-    req.setEtaToStationMinutes(0); // Assuming we are there or close
+    req.setEtaToStationMinutes(this.isMoving ? 5 : 0); // Rough estimate
 
     this.matchingService.evaluateDriver(req).subscribe({
       next: (resp) => {
         if (resp.getMatched()) {
           this.snackBar.open(resp.getMsg(), 'Close', { duration: 5000 });
-          // If matched, we should probably refresh or wait for notification?
-          // The backend sends notification on match.
+          // Update occupancy
+          const addedPassengers = resp.getResultsList().reduce((acc, r) => acc + r.getRiderIdsList().length, 0);
+          this.occupancy += addedPassengers;
+          this.updateLocation(); // Broadcast new capacity
         } else {
           this.snackBar.open('No matches found: ' + resp.getMsg(), 'Close', { duration: 3000 });
         }

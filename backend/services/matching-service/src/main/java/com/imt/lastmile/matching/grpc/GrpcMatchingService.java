@@ -143,6 +143,7 @@ public class GrpcMatchingService extends MatchingServiceGrpc.MatchingServiceImpl
     subscribers.forEach(sub -> {
       try { sub.onNext(event); } catch (Exception ignored) { }
     });
+    System.out.println("Broadcasted new-rider event to " + subscribers.size() + " subscribers for station: " + request.getStationAreaId());
 
     responseObserver.onNext(lastmile.matching.AddRiderIntentResponse.newBuilder().setSuccess(true).setMsg("Intent added").build());
     responseObserver.onCompleted();
@@ -150,6 +151,7 @@ public class GrpcMatchingService extends MatchingServiceGrpc.MatchingServiceImpl
 
   @Override
   public void subscribeMatches(SubscribeRequest request, StreamObserver<MatchEvent> responseObserver) {
+    System.out.println("Received subscribeMatches request from client: " + request.getClientId());
     subscribers.add(responseObserver);
     // Remove subscriber when client terminates (best-effort)
     responseObserver.onNext(MatchEvent.newBuilder()

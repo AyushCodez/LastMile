@@ -40,13 +40,17 @@ public class GrpcMatchingService extends MatchingServiceGrpc.MatchingServiceImpl
     }
 
     // Pass driver ETA to matching logic
+    System.out.println("Evaluating driver " + request.getDriverId() + ". Seats: " + seats + ", ETA: " + request.getEtaToStationMinutes());
     List<RiderIntent> riders = riderStore.takeMatching(request.getStationAreaId(), request.getDestinationAreaId(), seats, request.getEtaToStationMinutes());
     
     if (riders.isEmpty()) {
+      System.out.println("No riders matched for driver " + request.getDriverId());
       responseObserver.onNext(MatchResponse.newBuilder().setMatched(false).setMsg("No riders waiting").build());
       responseObserver.onCompleted();
       return;
     }
+
+    System.out.println("Matched " + riders.size() + " riders. Creating trip...");
 
     // Call Trip Service to create trip
     String tripId = "trip-" + UUID.randomUUID().toString().substring(0, 8);
@@ -59,14 +63,13 @@ public class GrpcMatchingService extends MatchingServiceGrpc.MatchingServiceImpl
           .addAllRiderIds(riders.stream().map(RiderIntent::getRiderId).toList())
           .setScheduledDeparture(request.getDriverLastUpdate()) // Approximate
           .build();
+      System.out.println("Sending CreateTripRequest to TripService...");
       lastmile.trip.Trip trip = tripClient.createTrip(tripReq);
       tripId = trip.getTripId();
+      System.out.println("Trip created successfully. TripID: " + tripId);
     } catch (Exception e) {
-      // If trip creation fails, we should probably rollback matching (put riders back), 
-      // but for now let's just log and return success with local ID, or fail.
-      // Ideally we should fail.
-      // But let's proceed for now as this is a prototype.
       System.err.println("Failed to create trip in TripService: " + e.getMessage());
+      e.printStackTrace();
     }
 
     MatchResult result = MatchResult.newBuilder()
@@ -86,6 +89,7 @@ public class GrpcMatchingService extends MatchingServiceGrpc.MatchingServiceImpl
 
     // Notify Driver
     try {
+      System.out.println("Notifying driver " + request.getDriverId());
       notificationClient.notify(lastmile.notification.Notification.newBuilder()
           .setUserId(request.getDriverId()) // Assuming driverId maps to userId for notification
           .setTitle("New Trip Assigned")
@@ -99,6 +103,7 @@ public class GrpcMatchingService extends MatchingServiceGrpc.MatchingServiceImpl
     // Notify Riders
     for (RiderIntent rider : riders) {
       try {
+        System.out.println("Notifying rider " + rider.getRiderId());
         notificationClient.notify(lastmile.notification.Notification.newBuilder()
             .setUserId(rider.getRiderId())
             .setTitle("Ride Matched")

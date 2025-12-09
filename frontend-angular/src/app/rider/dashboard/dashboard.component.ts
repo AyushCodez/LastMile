@@ -155,9 +155,19 @@ export class DashboardComponent implements OnInit, OnDestroy {
     console.log('Received notification:', notif);
     this.snackBar.open(`Notification: ${notif.body}`, 'Close', { duration: 5000 });
 
-    // Check for tripId in metadata
-    if (notif.metadataMap && notif.metadataMap.has('tripId')) {
-      const tripId = notif.metadataMap.get('tripId');
+    let tripId: string | null = null;
+    if (notif.metadataMap) {
+      if (Array.isArray(notif.metadataMap)) {
+        // AsObject typically converts Map to Array<[key, value]>
+        const entry = notif.metadataMap.find((e: any) => e[0] === 'tripId');
+        if (entry) tripId = entry[1];
+      } else if (typeof notif.metadataMap === 'object') {
+        // Fallback if it's a plain object
+        tripId = notif.metadataMap['tripId'];
+      }
+    }
+
+    if (tripId) {
       console.log('Trip ID found in notification:', tripId);
       this.loadTrip(tripId);
     }
@@ -168,6 +178,17 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.tripService.getTrip(tripId).subscribe({
       next: (trip) => {
         console.log('Trip loaded:', trip);
+
+        if (trip.status === 'COMPLETED' || trip.status === 'CANCELLED') {
+          this.dashboardState = 'IDLE';
+          this.activeTrip = null;
+          this.driverLocation = null;
+          this.driverProfile = null;
+          if (this.locSubscription) this.locSubscription.unsubscribe();
+          this.snackBar.open('Trip Ended', 'Close', { duration: 5000 });
+          return;
+        }
+
         this.activeTrip = trip;
         this.dashboardState = 'TRIP';
         localStorage.removeItem('lastmile_rider_pending'); // Clear pending state

@@ -21,6 +21,7 @@ public class GrpcTripService extends TripServiceGrpc.TripServiceImplBase {
 
   @Override
   public void createTrip(CreateTripRequest request, StreamObserver<lastmile.trip.Trip> responseObserver) {
+    System.out.println("Received createTrip request for Driver " + request.getDriverId() + " with " + request.getRiderIdsCount() + " riders.");
     Instant sched = request.hasScheduledDeparture()
         ? Instant.ofEpochSecond(request.getScheduledDeparture().getSeconds(), request.getScheduledDeparture().getNanos())
         : Instant.now();
@@ -32,29 +33,37 @@ public class GrpcTripService extends TripServiceGrpc.TripServiceImplBase {
         request.getRiderIdsList().stream().distinct().toList(),
         sched);
     repo.save(t);
+    System.out.println("Trip saved to DB with ID: " + t.getTripId());
+    
     responseObserver.onNext(toProto(t));
     responseObserver.onCompleted();
 
     // Notify Driver
     try {
+      System.out.println("Notifying driver " + t.getDriverId());
       notificationClient.notify(lastmile.notification.Notification.newBuilder()
           .setUserId(t.getDriverId())
           .setTitle("Trip Created")
           .setBody("Trip " + t.getTripId() + " has been created.")
           .putMetadata("tripId", t.getTripId())
           .build());
-    } catch (Exception ignored) {}
+    } catch (Exception e) {
+        System.err.println("Failed to notify driver: " + e.getMessage());
+    }
 
     // Notify Riders
     for (String riderId : t.getRiderUserIds()) {
       try {
+        System.out.println("Notifying rider " + riderId);
         notificationClient.notify(lastmile.notification.Notification.newBuilder()
             .setUserId(riderId)
             .setTitle("Trip Created")
             .setBody("Your trip " + t.getTripId() + " is confirmed.")
             .putMetadata("tripId", t.getTripId())
             .build());
-      } catch (Exception ignored) {}
+      } catch (Exception e) {
+          System.err.println("Failed to notify rider: " + e.getMessage());
+      }
     }
   }
 
@@ -72,6 +81,8 @@ public class GrpcTripService extends TripServiceGrpc.TripServiceImplBase {
     responseObserver.onNext(toProto(t));
     responseObserver.onCompleted();
 
+    System.out.println("Updating trip " + t.getTripId() + " to " + request.getStatus() + ". Riders: " + t.getRiderUserIds());
+
     // Notify Driver
     try {
       notificationClient.notify(lastmile.notification.Notification.newBuilder()
@@ -81,7 +92,11 @@ public class GrpcTripService extends TripServiceGrpc.TripServiceImplBase {
           .putMetadata("tripId", t.getTripId())
           .putMetadata("status", t.getStatus())
           .build());
-    } catch (Exception ignored) {}
+      System.out.println("Notified driver " + t.getDriverId());
+    } catch (Exception e) {
+      System.err.println("Failed to notify driver: " + e.getMessage());
+      e.printStackTrace();
+    }
 
     // Notify Riders
     for (String riderId : t.getRiderUserIds()) {
@@ -93,7 +108,11 @@ public class GrpcTripService extends TripServiceGrpc.TripServiceImplBase {
             .putMetadata("tripId", t.getTripId())
             .putMetadata("status", t.getStatus())
             .build());
-      } catch (Exception ignored) {}
+        System.out.println("Notified rider " + riderId);
+      } catch (Exception e) {
+        System.err.println("Failed to notify rider " + riderId + ": " + e.getMessage());
+        e.printStackTrace();
+      }
     }
   }
 

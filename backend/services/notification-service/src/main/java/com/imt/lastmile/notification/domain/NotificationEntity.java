@@ -20,19 +20,20 @@ public class NotificationEntity {
   private String body;
 
   @Column(name = "metadata", columnDefinition = "jsonb")
-  private String metadataJson;
+  @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.JSON)
+  private java.util.Map<String, Object> metadata;
 
   @Column(name = "created_at", nullable = false)
   private Instant createdAt = Instant.now();
 
   protected NotificationEntity() {}
-  public NotificationEntity(String userId, String title, String body, String metadataJson) {
-    this.userId = userId; this.title = title; this.body = body; this.metadataJson = metadataJson;
+  public NotificationEntity(String userId, String title, String body, java.util.Map<String, Object> metadata) {
+    this.userId = userId; this.title = title; this.body = body; this.metadata = metadata;
   }
   public Long getId() { return id; }
   public String getUserId() { return userId; }
   public String getTitle() { return title; }
   public String getBody() { return body; }
-  public String getMetadataJson() { return metadataJson; }
+  public java.util.Map<String, Object> getMetadata() { return metadata; }
   public Instant getCreatedAt() { return createdAt; }
 }

@@ -46,6 +46,8 @@ services:
       REDIS_PORT: 6379
       SERVER_PORT: 8087
       GRPC_PORT: 9097
+      TRIP_GRPC: static://trip-service:9094
+      NOTIFICATION_GRPC: static://notification-service:9098
     ports:
       - "8087:8087"
       - "9097:9097"
@@ -69,7 +71,7 @@ services:
       DB_PASSWORD: postgres
       SERVER_PORT: 8083
       MATCHING_GRPC: static://matching-service:9097
-      TRIP_GRPC: static://trip-service:9096
+      TRIP_GRPC: static://trip-service:9094
     ports:
       - "8083:8083"
       - "9093:9093"
@@ -117,12 +119,12 @@ services:
       DB_USER: postgres
       DB_PASSWORD: postgres
       SERVER_PORT: 8084
-      GRPC_PORT: 9094
+      GRPC_PORT: 9096
       DRIVER_GRPC: static://driver-service:9092
       MATCHING_GRPC: static://matching-service:9097
     ports:
       - "8084:8084"
-      - "9094:9094"
+      - "9096:9096"
     depends_on:
       postgres:
         condition: service_healthy
@@ -165,10 +167,11 @@ services:
       DB_USER: postgres
       DB_PASSWORD: postgres
       SERVER_PORT: 8086
-      GRPC_PORT: 9096
+      GRPC_PORT: 9094
+      NOTIFICATION_GRPC: static://notification-service:9098
     ports:
       - "8086:8086"
-      - "9096:9096"
+      - "9094:9094"
     depends_on:
       postgres:
         condition: service_healthy

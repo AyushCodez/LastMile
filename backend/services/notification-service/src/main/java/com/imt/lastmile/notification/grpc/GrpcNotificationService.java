@@ -18,13 +18,10 @@ public class GrpcNotificationService extends NotificationServiceGrpc.Notificatio
 
   @Override
   public void notify(Notification request, StreamObserver<Ack> responseObserver) {
-    // map metadata map to JSON string
-    String json = "";
-    try {
-       json = new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(request.getMetadataMap());
-    } catch (Exception e) { }
+    // map metadata map
+    java.util.Map<String, Object> meta = new java.util.HashMap<>(request.getMetadataMap());
 
-    repo.save(new NotificationEntity(request.getUserId(), request.getTitle(), request.getBody(), json));
+    repo.save(new NotificationEntity(request.getUserId(), request.getTitle(), request.getBody(), meta));
 
     // Push to active subscribers
     java.util.List<StreamObserver<Notification>> observers = activeSubscribers.get(request.getUserId());

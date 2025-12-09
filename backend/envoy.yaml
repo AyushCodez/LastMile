@@ -115,7 +115,7 @@ static_resources:
                   address:
                     socket_address:
                       address: location-service
-                      port_value: 9094
+                      port_value: 9096
     - name: station_service
       connect_timeout: 10s
       type: STRICT_DNS
@@ -145,7 +145,7 @@ static_resources:
                   address:
                     socket_address:
                       address: trip-service
-                      port_value: 9096
+                      port_value: 9094
     - name: matching_service
       connect_timeout: 10s
       type: STRICT_DNS

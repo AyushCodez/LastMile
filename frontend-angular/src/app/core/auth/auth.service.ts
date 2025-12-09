@@ -79,6 +79,9 @@ export class AuthService {
         }).pipe(
             map(res => res.toObject()),
             tap(res => {
+                if (!res.jwt || res.jwt === 'INVALID') {
+                    throw new Error('Invalid credentials');
+                }
                 localStorage.setItem(this.TOKEN_KEY, res.jwt);
                 this.isAuthenticatedSubject.next(true);
                 this.decodeToken(res.jwt);
@@ -107,8 +110,17 @@ export class AuthService {
     }
 
     private decodeToken(token: string) {
+        if (!token || token.split('.').length < 2) {
+            return;
+        }
         try {
-            const payload = JSON.parse(atob(token.split('.')[1]));
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+
+            const payload = JSON.parse(jsonPayload);
             if (payload.sub) {
                 localStorage.setItem(this.USER_ID_KEY, payload.sub);
             }

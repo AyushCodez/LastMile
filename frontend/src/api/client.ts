@@ -8,7 +8,7 @@ import { NotificationServiceClient } from '../proto/notification.client';
 import { LocationServiceClient } from '../proto/location.client';
 
 const transport = new GrpcWebFetchTransport({
-    baseUrl: 'http://localhost:8080'
+    baseUrl: 'http://localhost:8090'
 });
 
 export const userClient = new UserServiceClient(transport);

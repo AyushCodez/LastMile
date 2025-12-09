@@ -9,7 +9,7 @@ import { NotificationServiceClient } from '../../../proto/notification_pb_servic
 import { LocationServiceClient } from '../../../proto/location_pb_service';
 import { MatchingServiceClient } from '../../../proto/matching_pb_service';
 
-export const GRPC_URL = 'http://localhost:8080';
+export const GRPC_URL = 'http://localhost:8090';
 
 @NgModule({
     providers: [

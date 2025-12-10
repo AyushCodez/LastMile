@@ -26,6 +26,7 @@ message RideStatus {
   string trip_id = 3;
   string destination_area_id = 4;
   string station_area_id = 5;
+  google.protobuf.Timestamp arrival_time = 6;
 }
 
 message GetRideHistoryRequest {

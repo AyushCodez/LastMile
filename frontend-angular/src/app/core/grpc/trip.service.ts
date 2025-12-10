@@ -1,91 +1,49 @@
 import { Injectable } from '@angular/core';
-import { TripServiceClient } from '../../../proto/trip_pb_service';
-import { CreateTripRequest, Trip, UpdateTripRequest, TripId, GetTripsRequest, GetTripsResponse } from '../../../proto/trip_pb';
+import { TripServiceClientImpl, Trip, CreateTripRequest, UpdateTripRequest, TripId, GetTripsRequest, GetTripsResponse } from '../../../proto/trip';
+import { BehaviorSubject, Observable, from } from 'rxjs';
+import { map, tap } from 'rxjs/operators';
 import { AuthService } from '../auth/auth.service';
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
-import { Timestamp } from 'google-protobuf/google/protobuf/timestamp_pb';
+import { GrpcWebRpc } from './grpc-web-rpc';
+import { GRPC_URL } from './grpc-clients.module';
 
 @Injectable({
     providedIn: 'root'
 })
 export class TripGrpcService {
 
-    constructor(
-        private tripClient: TripServiceClient,
-        private authService: AuthService
-    ) { }
+    private tripClient: TripServiceClientImpl;
 
-    createTrip(driverId: string, routeId: string, stationAreaId: string, destinationAreaId: string, riderIds: string[]): Observable<Trip.AsObject> {
-        const req = new CreateTripRequest();
-        req.setDriverId(driverId);
-        req.setRouteId(routeId);
-        req.setStationAreaId(stationAreaId);
-        req.setDestinationAreaId(destinationAreaId);
-        req.setRiderIdsList(riderIds);
-
-        // Scheduled departure - now?
-        const ts = new Timestamp();
-        const now = new Date();
-        ts.setSeconds(Math.floor(now.getTime() / 1000));
-        ts.setNanos((now.getTime() % 1000) * 1000000);
-        req.setScheduledDeparture(ts);
-
-        return new Observable<Trip>((observer) => {
-            this.tripClient.createTrip(req, this.authService.getMetadata(), (err, res) => {
-                if (err) observer.error(err);
-                else if (res) {
-                    observer.next(res);
-                    observer.complete();
-                }
-            });
-        }).pipe(map(res => res.toObject()));
+    constructor(private authService: AuthService) {
+        const rpc = new GrpcWebRpc(GRPC_URL);
+        this.tripClient = new TripServiceClientImpl(rpc);
     }
 
-    updateTripStatus(tripId: string, status: string): Observable<Trip.AsObject> {
-        const req = new UpdateTripRequest();
-        req.setTripId(tripId);
-        req.setStatus(status);
+    createTrip(driverId: string, routeId: string, stationAreaId: string, riderIds: string[], destinationAreaId: string, scheduledDeparture?: Date): Observable<Trip> {
+        const req: CreateTripRequest = {
+            driverId,
+            routeId,
+            stationAreaId,
+            riderIds,
+            destinationAreaId,
+            scheduledDeparture
+        };
 
-        return new Observable<Trip>((observer) => {
-            this.tripClient.updateTripStatus(req, this.authService.getMetadata(), (err, res) => {
-                if (err) observer.error(err);
-                else if (res) {
-                    observer.next(res);
-                    observer.complete();
-                }
-            });
-        }).pipe(map(res => res.toObject()));
+        return from(this.tripClient.CreateTrip(req));
     }
 
-    getTrip(tripId: string): Observable<Trip.AsObject> {
-        const req = new TripId();
-        req.setId(tripId);
-
-        return new Observable<Trip>((observer) => {
-            this.tripClient.getTrip(req, this.authService.getMetadata(), (err, res) => {
-                if (err) observer.error(err);
-                else if (res) {
-                    observer.next(res);
-                    observer.complete();
-                }
-            });
-        }).pipe(map(res => res.toObject()));
+    updateTripStatus(tripId: string, status: string): Observable<Trip> {
+        const req: UpdateTripRequest = { tripId, status };
+        return from(this.tripClient.UpdateTripStatus(req));
     }
 
-    getTrips(driverId: string = '', riderId: string = ''): Observable<Trip.AsObject[]> {
-        const req = new GetTripsRequest();
-        if (driverId) req.setDriverId(driverId);
-        if (riderId) req.setRiderId(riderId);
+    getTrip(tripId: string): Observable<Trip> {
+        const req: TripId = { id: tripId };
+        return from(this.tripClient.GetTrip(req));
+    }
 
-        return new Observable<GetTripsResponse>((observer) => {
-            this.tripClient.getTrips(req, this.authService.getMetadata(), (err, res) => {
-                if (err) observer.error(err);
-                else if (res) {
-                    observer.next(res);
-                    observer.complete();
-                }
-            });
-        }).pipe(map(res => res.getTripsList().map(t => t.toObject())));
+    getTrips(driverId: string, riderId: string): Observable<GetTripsResponse> {
+        const req: GetTripsRequest = { driverId, riderId };
+        return from(this.tripClient.GetTrips(req));
     }
 }
+

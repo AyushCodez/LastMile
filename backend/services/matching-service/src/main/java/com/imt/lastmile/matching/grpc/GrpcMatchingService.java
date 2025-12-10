@@ -90,12 +90,16 @@ public class GrpcMatchingService extends MatchingServiceGrpc.MatchingServiceImpl
     // Notify Driver
     try {
       System.out.println("Notifying driver " + request.getDriverId());
-      notificationClient.notify(lastmile.notification.Notification.newBuilder()
-          .setUserId(request.getDriverId()) // Assuming driverId maps to userId for notification
-          .setTitle("New Trip Assigned")
-          .setBody("You have been matched with " + riders.size() + " riders. Trip ID: " + tripId)
-          .putMetadata("tripId", tripId)
-          .build());
+      for (RiderIntent r : riders) {
+        notificationClient.notify(lastmile.notification.Notification.newBuilder()
+            .setUserId(request.getDriverId())
+            .setTitle("New Trip Assigned")
+            .setBody("New Match: Pickup " + r.getPartySize() + " passenger(s) at " + r.getStationAreaId())
+            .putMetadata("tripId", tripId)
+            .putMetadata("riderId", r.getRiderId())
+            .putMetadata("passengerCount", String.valueOf(r.getPartySize()))
+            .build());
+      }
     } catch (Exception e) {
       System.err.println("Failed to notify driver: " + e.getMessage());
     }
@@ -135,7 +139,8 @@ public class GrpcMatchingService extends MatchingServiceGrpc.MatchingServiceImpl
         request.getStationAreaId(),
         request.getDestinationAreaId(),
         java.time.Instant.now(),
-        arrivalTime
+        arrivalTime,
+        request.getPartySize()
     );
     riderStore.add(intent);
     
@@ -166,6 +171,12 @@ public class GrpcMatchingService extends MatchingServiceGrpc.MatchingServiceImpl
       .setEventId("welcome-" + UUID.randomUUID().toString().substring(0, 6))
       .setStationAreaId("")
       .build());
+  }
+  @Override
+  public void cancelRideIntent(lastmile.matching.CancelRideIntentRequest request, StreamObserver<lastmile.matching.CancelRideIntentResponse> responseObserver) {
+    riderStore.remove(request.getRiderId(), request.getStationAreaId());
+    responseObserver.onNext(lastmile.matching.CancelRideIntentResponse.newBuilder().setSuccess(true).setMsg("Intent cancelled").build());
+    responseObserver.onCompleted();
   }
 }
 

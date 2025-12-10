@@ -38,6 +38,7 @@ public class GrpcRiderService extends RiderServiceGrpc.RiderServiceImplBase {
             .setStationAreaId(request.getStationAreaId())
             .setDestinationAreaId(request.getDestinationAreaId())
             .setArrivalTime(request.getArrivalTime())
+            .setPartySize(request.getPartySize())
             .build();
         
         matchingStub.addRiderIntent(matchReq);
@@ -66,6 +67,7 @@ public class GrpcRiderService extends RiderServiceGrpc.RiderServiceImplBase {
       .setTripId(ri.getTripId() == null ? "" : ri.getTripId())
       .setDestinationAreaId(ri.getDestinationAreaId())
       .setStationAreaId(ri.getStationAreaId())
+      .setArrivalTime(com.google.protobuf.TimestampProto.Timestamp.newBuilder().setSeconds(ri.getArrivalTime().getEpochSecond()).build())
       .build());
     responseObserver.onCompleted();
   }
@@ -85,6 +87,10 @@ public class GrpcRiderService extends RiderServiceGrpc.RiderServiceImplBase {
           .setStatus(RideStatus.Status.valueOf(t.getStatus())) // Assuming status strings match enum names
           .setStationAreaId(t.getStationAreaId())
           .setDestinationAreaId(t.getDestinationAreaId())
+          .setArrivalTime(com.google.protobuf.TimestampProto.Timestamp.newBuilder()
+              .setSeconds(t.getScheduledDeparture().getSeconds())
+              .setNanos(t.getScheduledDeparture().getNanos())
+              .build())
           .build()).toList();
           
       responseObserver.onNext(lastmile.rider.RideHistoryResponse.newBuilder().addAllRides(history).build());

@@ -40,6 +40,21 @@ public class RiderIntentStore {
     redisTemplate.expire(key, 3600, TimeUnit.SECONDS);
   }
 
+  public void remove(String riderId, String stationAreaId) {
+    String key = getKey(stationAreaId);
+    Set<Object> candidates = redisTemplate.opsForZSet().range(key, 0, -1);
+    if (candidates != null) {
+      for (Object obj : candidates) {
+        RiderIntent r = convert(obj);
+        if (r != null && r.getRiderId().equals(riderId)) {
+          redisTemplate.opsForZSet().remove(key, obj);
+          log.info("Removed rider {} from key: {}", riderId, key);
+          break; 
+        }
+      }
+    }
+  }
+
   /**
    * Fetch candidate riders for a station matching destination.
    * Uses Redis transactions to ensure atomicity.
@@ -68,6 +83,7 @@ public class RiderIntentStore {
         Set<Object> candidates = operations.opsForZSet().range(key, 0, -1);
         
         List<RiderIntent> matched = new ArrayList<>();
+        int currentPax = 0;
         if (candidates != null) {
           for (Object obj : candidates) {
             RiderIntent r = convert(obj);
@@ -75,10 +91,13 @@ public class RiderIntentStore {
 
             boolean destMatch = destinationAreaId == null || destinationAreaId.isBlank() || destinationAreaId.equalsIgnoreCase(r.getDestinationAreaId());
             boolean timeMatch = r.getArrivalTime().isBefore(driverArrival.plusSeconds(300)); // 5 min buffer
+            boolean fits = (currentPax + r.getPartySize()) <= limit;
 
-            if (destMatch && timeMatch) {
+            if (destMatch && timeMatch && fits) {
               matched.add(r);
-              if (matched.size() >= limit) break;
+              currentPax += r.getPartySize();
+              // If we are full exactly, break. If we have space but next guy is too big, we continue (utilization).
+              if (currentPax >= limit) break;
             }
           }
         }

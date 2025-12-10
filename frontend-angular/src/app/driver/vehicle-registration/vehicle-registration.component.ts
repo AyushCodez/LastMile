@@ -3,6 +3,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { DriverGrpcService } from '../driver-grpc.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
+import { AuthService } from '../../core/auth/auth.service';
 
 @Component({
   selector: 'app-vehicle-registration',
@@ -17,7 +18,8 @@ export class VehicleRegistrationComponent implements OnInit {
     private fb: FormBuilder,
     private driverService: DriverGrpcService,
     private snackBar: MatSnackBar,
-    private router: Router
+    private router: Router,
+    private authService: AuthService
   ) {
     this.vehicleForm = this.fb.group({
       vehicleNo: ['', Validators.required],
@@ -32,8 +34,11 @@ export class VehicleRegistrationComponent implements OnInit {
   }
 
   loadProfile() {
+    const userId = this.authService.getUserId();
+    if (!userId) return;
+
     this.loading = true;
-    this.driverService.getDriverProfile().subscribe({
+    this.driverService.getDriverByUserId(userId).subscribe({
       next: (profile) => {
         if (profile.vehicleNo) {
           this.vehicleForm.patchValue({
@@ -57,7 +62,10 @@ export class VehicleRegistrationComponent implements OnInit {
     if (this.vehicleForm.valid) {
       this.loading = true;
       const { vehicleNo, capacity, model, color } = this.vehicleForm.value;
-      this.driverService.registerDriver(vehicleNo, capacity, model, color).subscribe({
+      const userId = this.authService.getUserId();
+      if (!userId) return;
+
+      this.driverService.registerDriver(userId, vehicleNo, capacity, model, color).subscribe({
         next: (res) => {
           this.snackBar.open('Vehicle details saved successfully', 'Close', { duration: 3000 });
           this.loading = false;

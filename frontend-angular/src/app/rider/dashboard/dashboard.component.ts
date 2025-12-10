@@ -5,11 +5,13 @@ import { RiderGrpcService } from '../rider-grpc.service';
 import { NotificationService } from '../../core/grpc/notification.service';
 import { TripGrpcService } from '../../core/grpc/trip.service';
 import { LocationGrpcService } from '../../core/grpc/location.service';
-import { Area } from '../../../proto/common_pb';
-import { Trip } from '../../../proto/trip_pb';
-import { DriverSnapshot } from '../../../proto/location_pb';
-import { DriverProfile } from '../../../proto/driver_pb';
+import { Area } from '../../../proto/common';
+import { Trip } from '../../../proto/trip';
+import { DriverSnapshot } from '../../../proto/location';
+import { DriverProfile } from '../../../proto/driver';
 import { DriverGrpcService } from '../../driver/driver-grpc.service';
+import { MatchingGrpcService } from '../../core/grpc/matching.service';
+import { CancelRideIntentRequest } from '../../../proto/matching';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Subscription, timer } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
@@ -23,13 +25,13 @@ import { AuthService } from '../../core/auth/auth.service';
 })
 export class DashboardComponent implements OnInit, OnDestroy {
   rideForm: FormGroup;
-  stations: Area.AsObject[] = [];
-  destinations: Area.AsObject[] = [];
+  stations: Area[] = [];
+  destinations: Area[] = [];
   dashboardState: 'IDLE' | 'PENDING' | 'TRIP' = 'IDLE';
   loading = false;
-  activeTrip: Trip.AsObject | null = null;
-  driverLocation: DriverSnapshot.AsObject | null = null;
-  driverProfile: DriverProfile.AsObject | null = null;
+  activeTrip: Trip | null = null;
+  driverLocation: DriverSnapshot | null = null;
+  driverProfile: DriverProfile | null = null;
 
   private notifSubscription: Subscription | null = null;
   private locSubscription: Subscription | null = null;
@@ -43,7 +45,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
     private locationService: LocationGrpcService,
     private snackBar: MatSnackBar,
     private authService: AuthService,
-    private driverGrpcService: DriverGrpcService
+    private driverGrpcService: DriverGrpcService,
+    private matchingService: MatchingGrpcService
   ) {
     this.rideForm = this.fb.group({
       stationId: ['', Validators.required],
@@ -57,8 +60,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.loadAreas();
     this.checkPersistentState();
 
-    this.notificationService.connect();
-    this.notifSubscription = this.notificationService.notifications$.subscribe(notif => {
+    this.notifSubscription = this.notificationService.subscribe().subscribe(notif => {
       this.handleNotification(notif);
     });
   }
@@ -69,7 +71,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     if (userId) {
       this.tripService.getTrips('', userId).subscribe({
         next: (trips) => {
-          const active = trips.find(t => t.status !== 'COMPLETED' && t.status !== 'CANCELLED');
+          const active = trips.trips.find(t => t.status !== 'COMPLETED' && t.status !== 'CANCELLED');
           if (active) {
             this.loadTrip(active.tripId);
           } else {
@@ -126,7 +128,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
     if (this.rideForm.valid) {
       this.loading = true;
       const { stationId, destinationId, partySize, offsetMinutes } = this.rideForm.value;
-      this.riderService.registerRideIntent(stationId, destinationId, partySize, offsetMinutes).subscribe({
+      const userId = this.authService.getUserId();
+      if (!userId) return;
+
+      const now = new Date();
+      const arrivalTime = new Date(now.getTime() + offsetMinutes * 60000);
+
+      this.riderService.registerRideIntent(userId, stationId, destinationId, arrivalTime, partySize).subscribe({
         next: (res) => {
           this.snackBar.open('Ride Request Sent! Waiting for a driver...', 'Close', { duration: 5000 });
           this.loading = false;
@@ -145,10 +153,34 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   cancelRequest() {
-    // Client-side cancellation only (since backend doesn't support explicit cancel intent yet)
-    localStorage.removeItem('lastmile_rider_pending');
-    this.dashboardState = 'IDLE';
-    this.snackBar.open('Request Cancelled', 'Close', { duration: 2000 });
+    const userId = this.authService.getUserId();
+    const stationId = this.rideForm.get('stationId')?.value;
+
+    if (userId && stationId) {
+      this.matchingService.cancelRideIntent(userId, stationId).subscribe({
+        next: (res) => {
+          this.snackBar.open('Request Cancelled', 'Close', { duration: 2000 });
+          localStorage.removeItem('lastmile_rider_pending');
+          this.dashboardState = 'IDLE';
+        },
+        error: (err) => {
+          console.error('Failed to cancel intent', err);
+          // Fallback to client-side clear
+          localStorage.removeItem('lastmile_rider_pending');
+          this.dashboardState = 'IDLE';
+        }
+      });
+    } else {
+      // Fallback
+      localStorage.removeItem('lastmile_rider_pending');
+      this.dashboardState = 'IDLE';
+      this.snackBar.open('Request Cancelled', 'Close', { duration: 2000 });
+    }
+  }
+
+  getAreaName(id: string): string {
+    const area = this.destinations.find(a => a.id === id);
+    return area ? area.name : id;
   }
 
   handleNotification(notif: any) {
@@ -195,7 +227,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.startTrackingDriver(trip.driverId);
 
         // Fetch Driver Details
-        this.driverGrpcService.getDriverById(trip.driverId).subscribe({
+        this.driverGrpcService.getDriverProfile(trip.driverId).subscribe({
           next: (profile) => {
             this.driverProfile = profile;
           },

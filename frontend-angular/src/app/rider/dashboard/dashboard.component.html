@@ -67,6 +67,12 @@
             <div *ngIf="activeTrip" class="trip-info">
                 <h3>Trip #{{ activeTrip.tripId }}</h3>
                 <p class="status">Status: {{ activeTrip.status }}</p>
+                <p><strong>Route:</strong> {{ getAreaName(activeTrip.stationAreaId) }} to {{
+                    getAreaName(activeTrip.destinationAreaId) }}</p>
+
+                <div *ngIf="activeTrip.status === 'SCHEDULED' || activeTrip.status === 'CREATED'">
+                    <button mat-stroked-button color="warn" (click)="cancelRequest()">Cancel Ride</button>
+                </div>
 
                 <div *ngIf="driverProfile" class="driver-details">
                     <h4>Driver & Vehicle</h4>
@@ -81,9 +87,9 @@
 
                 <div *ngIf="driverLocation" class="location-info">
                     <h4>Current Location</h4>
-                    <p>Area: {{ driverLocation.currentAreaId }}</p>
+                    <p>Area: {{ getAreaName(driverLocation.currentAreaId) }}</p>
                     <p>Occupancy: {{ driverLocation.occupancy }} / {{ driverProfile?.capacity || '?' }}</p>
-                    <p class="timestamp">Last Update: {{ (driverLocation.ts?.seconds || 0) * 1000 | date:'mediumTime' }}
+                    <p class="timestamp">Last Update: {{ driverLocation.ts | date:'mediumTime' }}
                     </p>
                 </div>
                 <div *ngIf="!driverLocation">

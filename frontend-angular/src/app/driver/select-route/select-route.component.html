@@ -14,8 +14,7 @@
                 <mat-list-item *ngFor="let route of routes">
                     <mat-icon matListItemIcon>alt_route</mat-icon>
                     <div matListItemTitle>{{ getRouteDescription(route) }}</div>
-                    <div matListItemLine>Created: {{ route.createdAt?.seconds ? (route.createdAt!.seconds * 1000 | date)
-                        : 'N/A' }}</div>
+                    <mat-card-subtitle>Created: {{ route.createdAt | date }}</mat-card-subtitle>
                     <button mat-icon-button (click)="selectRoute(route)">
                         <mat-icon>arrow_forward</mat-icon>
                     </button>

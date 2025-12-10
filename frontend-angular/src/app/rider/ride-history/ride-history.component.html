@@ -9,23 +9,44 @@
                 <p>No rides found.</p>
             </div>
 
-            <mat-list *ngIf="rides.length > 0">
-                <mat-list-item *ngFor="let ride of rides" class="ride-item">
-                    <mat-icon matListItemIcon>history</mat-icon>
-                    <div matListItemTitle>
-                        {{ getAreaName(ride.stationAreaId) }} to {{ getAreaName(ride.destinationAreaId) }}
+            <mat-accordion *ngIf="rides.length > 0">
+                <mat-expansion-panel *ngFor="let ride of rides">
+                    <mat-expansion-panel-header>
+                        <mat-panel-title>
+                            {{ getAreaName(ride.stationAreaId) }} to {{ getAreaName(ride.destinationAreaId) }}
+                        </mat-panel-title>
+                        <mat-panel-description>
+                            {{ getStatusLabel(ride.status) }}
+                        </mat-panel-description>
+                    </mat-expansion-panel-header>
+
+                    <div class="ride-details">
+                        <p><strong>Requested Arrival:</strong> {{ ride.arrivalTime |
+                            date:'medium' }}</p>
+
+                        <div *ngIf="tripDetails.get(ride.intentId) as trip">
+                            <mat-divider></mat-divider>
+                            <h4>Trip Details</h4>
+                            <p><strong>Trip ID:</strong> {{ trip.tripId }}</p>
+                            <p><strong>Scheduled Departure:</strong> {{ trip.scheduledDeparture |
+                                date:'medium' }}</p>
+                            <p><strong>Status:</strong> {{ trip.status }}</p>
+                        </div>
+
+                        <div *ngIf="driverDetails.get(ride.intentId) as driver">
+                            <mat-divider></mat-divider>
+                            <h4>Driver</h4>
+                            <p><strong>Vehicle:</strong> {{ driver.color }} {{ driver.model }}</p>
+                            <p><strong>Plate:</strong> {{ driver.vehicleNo }}</p>
+                            <p><strong>Capacity:</strong> {{ driver.capacity }} seats</p>
+                        </div>
+
+                        <div *ngIf="!driverDetails.get(ride.intentId) && ride.tripId">
+                            <p><i>Loading driver info...</i></p>
+                        </div>
                     </div>
-                    <div matListItemLine>
-                        Status: {{ getStatusLabel(ride.status) }}
-                    </div>
-                    <div matListItemLine *ngIf="driverDetails.get(ride.intentId) as driver">
-                        Driver: {{ driver.color }} {{ driver.model }} ({{ driver.vehicleNo }})
-                    </div>
-                    <div matListItemLine *ngIf="!driverDetails.get(ride.intentId) && ride.tripId">
-                        <i>Loading driver info...</i>
-                    </div>
-                </mat-list-item>
-            </mat-list>
+                </mat-expansion-panel>
+            </mat-accordion>
         </mat-card-content>
     </mat-card>
 </div>

@@ -1,0 +1,144 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: load-gen-config
+data:
+  matching.proto: |
+    syntax = "proto3";
+    package lastmile.matching;
+    option java_package = "lastmile.matching";
+    option java_multiple_files = true;
+    import "google/protobuf/timestamp.proto";
+
+    service MatchingService {
+      rpc EvaluateDriver(EvaluateDriverRequest) returns (MatchResponse);
+      rpc SubscribeMatches(SubscribeRequest) returns (stream MatchEvent);
+      rpc AddRiderIntent(AddRiderIntentRequest) returns (AddRiderIntentResponse);
+    }
+
+    message EvaluateDriverRequest {
+      string driver_id = 1;
+      string route_id = 2;
+      string station_area_id = 3;
+      string driver_current_area_id = 4;
+      string destination_area_id = 5;
+      int32 seats_available = 6;
+      int32 eta_to_station_minutes = 7;
+      google.protobuf.Timestamp driver_last_update = 8;
+    }
+
+    message MatchResult {
+      string trip_id = 1;
+      string driver_id = 2;
+      string station_area_id = 3;
+      string destination_area_id = 4;
+      repeated string rider_ids = 5;
+    }
+
+    message MatchResponse {
+      bool matched = 1;
+      repeated MatchResult results = 2;
+      string msg = 3;
+    }
+
+    message MatchEvent {
+      string event_id = 1;
+      string station_area_id = 2;
+      MatchResult result = 3;
+    }
+
+    message SubscribeRequest { string client_id = 1; }
+
+    message AddRiderIntentRequest {
+      string rider_id = 1;
+      string station_area_id = 2;
+      string destination_area_id = 3;
+      google.protobuf.Timestamp arrival_time = 4;
+    }
+
+    message AddRiderIntentResponse {
+      bool success = 1;
+      string msg = 2;
+    }
+
+  load_test.py: |
+    import grpc
+    import time
+    import threading
+    import random
+    from concurrent import futures
+
+    # Dynamic proto compilation
+    import grpc_tools.protoc
+    grpc_tools.protoc.main((
+        '',
+        '-I.',
+        '--python_out=.',
+        '--grpc_python_out=.',
+        'matching.proto',
+    ))
+
+    import matching_pb2
+    import matching_pb2_grpc
+
+    def send_requests():
+        channel = grpc.insecure_channel('matching-service:9097')
+        stub = matching_pb2_grpc.MatchingServiceStub(channel)
+        
+        while True:
+            try:
+                req = matching_pb2.EvaluateDriverRequest(
+                    driver_id=f"driver-{random.randint(1, 1000)}",
+                    route_id="route-1",
+                    station_area_id="station-1",
+                    driver_current_area_id="remote-area",
+                    destination_area_id="dest-1",
+                    seats_available=4,
+                    eta_to_station_minutes=5
+                )
+                stub.EvaluateDriver(req)
+                # No sleep to maximize load
+            except Exception as e:
+                print(f"Error: {e}")
+                time.sleep(1)
+
+    if __name__ == '__main__':
+        print("Starting Load Test...")
+        # running 10 concurrent threads to generate sufficient CPU load
+        threads = []
+        for _ in range(10):
+            t = threading.Thread(target=send_requests)
+            t.start()
+            threads.append(t)
+        
+        for t in threads:
+            t.join()
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: load-generator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: load-generator
+  template:
+    metadata:
+      labels:
+        app: load-generator
+    spec:
+      containers:
+        - name: load-generator
+          image: python:3.9-slim
+          command: ["/bin/sh", "-c"]
+          args:
+            - pip install grpcio grpcio-tools && python /app/load_test.py
+          volumeMounts:
+            - name: config-volume
+              mountPath: /app
+      volumes:
+        - name: config-volume
+          configMap:
+            name: load-gen-config

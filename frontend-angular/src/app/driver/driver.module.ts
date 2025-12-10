@@ -18,6 +18,7 @@ import { CreateRouteComponent } from './create-route/create-route.component';
 import { SelectRouteComponent } from './select-route/select-route.component';
 import { VehicleRegistrationComponent } from './vehicle-registration/vehicle-registration.component';
 import { DriverProfileComponent } from './driver-profile/driver-profile.component';
+import { RideRequestSnackbarComponent } from './ride-request-snackbar/ride-request-snackbar.component';
 
 @NgModule({
   declarations: [
@@ -25,7 +26,8 @@ import { DriverProfileComponent } from './driver-profile/driver-profile.componen
     CreateRouteComponent,
     SelectRouteComponent,
     VehicleRegistrationComponent,
-    DriverProfileComponent
+    DriverProfileComponent,
+    RideRequestSnackbarComponent
   ],
   imports: [
     CommonModule,

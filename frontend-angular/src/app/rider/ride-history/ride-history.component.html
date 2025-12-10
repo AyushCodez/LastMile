@@ -10,7 +10,7 @@
             </div>
 
             <mat-accordion *ngIf="rides.length > 0">
-                <mat-expansion-panel *ngFor="let ride of rides">
+                <mat-expansion-panel *ngFor="let ride of rides" (opened)="selectRide(ride)" (closed)="selectRide(null)">
                     <mat-expansion-panel-header>
                         <mat-panel-title>
                             {{ getAreaName(ride.stationAreaId) }} to {{ getAreaName(ride.destinationAreaId) }}
@@ -26,23 +26,20 @@
 
                         <div *ngIf="tripDetails.get(ride.intentId) as trip">
                             <mat-divider></mat-divider>
-                            <h4>Trip Details</h4>
+                            <h3>Trip Details</h3>
                             <p><strong>Trip ID:</strong> {{ trip.tripId }}</p>
                             <p><strong>Scheduled Departure:</strong> {{ trip.scheduledDeparture |
                                 date:'medium' }}</p>
                             <p><strong>Status:</strong> {{ trip.status }}</p>
-                        </div>
 
-                        <div *ngIf="driverDetails.get(ride.intentId) as driver">
-                            <mat-divider></mat-divider>
-                            <h4>Driver</h4>
-                            <p><strong>Vehicle:</strong> {{ driver.color }} {{ driver.model }}</p>
-                            <p><strong>Plate:</strong> {{ driver.vehicleNo }}</p>
-                            <p><strong>Capacity:</strong> {{ driver.capacity }} seats</p>
-                        </div>
-
-                        <div *ngIf="!driverDetails.get(ride.intentId) && ride.tripId">
-                            <p><i>Loading driver info...</i></p>
+                            <div *ngIf="driverDetails.get(ride.intentId) as driver">
+                                <mat-divider></mat-divider>
+                                <h4>Driver</h4>
+                                <p><strong>Name:</strong> {{ driverNames.get(ride.intentId) || 'Loading...' }}</p>
+                                <p><strong>Vehicle:</strong> {{ driver.color }} {{ driver.model }}</p>
+                                <p><strong>Plate:</strong> {{ driver.vehicleNo }}</p>
+                                <p><strong>Capacity:</strong> {{ driver.capacity }} seats</p>
+                            </div>
                         </div>
                     </div>
                 </mat-expansion-panel>

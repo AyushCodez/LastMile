@@ -42,7 +42,10 @@ message MatchEvent {
   MatchResult result = 3;
 }
 
-message SubscribeRequest { string client_id = 1; }
+message SubscribeRequest {
+  string client_id = 1;
+  repeated string station_ids = 2;
+}
 
 message AddRiderIntentRequest {
   string rider_id = 1;

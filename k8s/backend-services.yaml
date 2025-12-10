@@ -1,0 +1,415 @@
+# User Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service
+spec:
+  ports:
+    - port: 9091
+      name: grpc
+    - port: 8081
+      name: http
+  selector:
+    app: user-service
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+    spec:
+      containers:
+        - name: user-service
+          image: user-service:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 9091
+            - containerPort: 8081
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: docker
+            - name: DB_URL
+              value: jdbc:postgresql://postgres:5432/lastmile
+            - name: DB_USER
+              value: postgres
+            - name: DB_PASSWORD
+              value: postgres
+            - name: SERVER_PORT
+              value: "8081"
+            - name: GRPC_PORT
+              value: "9091"
+
+---
+# Rider Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: rider-service
+spec:
+  ports:
+    - port: 9093
+      name: grpc
+    - port: 8083
+      name: http
+  selector:
+    app: rider-service
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rider-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rider-service
+  template:
+    metadata:
+      labels:
+        app: rider-service
+    spec:
+      containers:
+        - name: rider-service
+          image: rider-service:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 9093
+            - containerPort: 8083
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: docker
+            - name: DB_URL
+              value: jdbc:postgresql://postgres:5432/lastmile
+            - name: DB_USER
+              value: postgres
+            - name: DB_PASSWORD
+              value: postgres
+            - name: SERVER_PORT
+              value: "8083"
+            - name: MATCHING_GRPC
+              value: static://matching-service:9097
+            - name: TRIP_GRPC
+              value: static://trip-service:9094
+
+---
+# Driver Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: driver-service
+spec:
+  ports:
+    - port: 9092
+      name: grpc
+    - port: 8082
+      name: http
+  selector:
+    app: driver-service
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: driver-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: driver-service
+  template:
+    metadata:
+      labels:
+        app: driver-service
+    spec:
+      containers:
+        - name: driver-service
+          image: driver-service:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 9092
+            - containerPort: 8082
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: docker
+            - name: DB_URL
+              value: jdbc:postgresql://postgres:5432/lastmile
+            - name: DB_USER
+              value: postgres
+            - name: DB_PASSWORD
+              value: postgres
+            - name: SERVER_PORT
+              value: "8082"
+            - name: GRPC_PORT
+              value: "9092"
+
+---
+# Location Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: location-service
+spec:
+  ports:
+    - port: 9096
+      name: grpc
+    - port: 8084
+      name: http
+  selector:
+    app: location-service
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: location-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: location-service
+  template:
+    metadata:
+      labels:
+        app: location-service
+    spec:
+      containers:
+        - name: location-service
+          image: location-service:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 9096
+            - containerPort: 8084
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: docker
+            - name: DB_URL
+              value: jdbc:postgresql://postgres:5432/lastmile
+            - name: DB_USER
+              value: postgres
+            - name: DB_PASSWORD
+              value: postgres
+            - name: SERVER_PORT
+              value: "8084"
+            - name: GRPC_PORT
+              value: "9096"
+            - name: DRIVER_GRPC
+              value: static://driver-service:9092
+            - name: MATCHING_GRPC
+              value: static://matching-service:9097
+
+---
+# Station Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: station-service
+spec:
+  ports:
+    - port: 9095
+      name: grpc
+    - port: 8085
+      name: http
+  selector:
+    app: station-service
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: station-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: station-service
+  template:
+    metadata:
+      labels:
+        app: station-service
+    spec:
+      containers:
+        - name: station-service
+          image: station-service:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 9095
+            - containerPort: 8085
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: docker
+            - name: DB_URL
+              value: jdbc:postgresql://postgres:5432/lastmile
+            - name: DB_USER
+              value: postgres
+            - name: DB_PASSWORD
+              value: postgres
+            - name: SERVER_PORT
+              value: "8085"
+            - name: GRPC_PORT
+              value: "9095"
+
+---
+# Trip Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: trip-service
+spec:
+  ports:
+    - port: 9094
+      name: grpc
+    - port: 8086
+      name: http
+  selector:
+    app: trip-service
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trip-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: trip-service
+  template:
+    metadata:
+      labels:
+        app: trip-service
+    spec:
+      containers:
+        - name: trip-service
+          image: trip-service:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 9094
+            - containerPort: 8086
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: docker
+            - name: DB_URL
+              value: jdbc:postgresql://postgres:5432/lastmile
+            - name: DB_USER
+              value: postgres
+            - name: DB_PASSWORD
+              value: postgres
+            - name: SERVER_PORT
+              value: "8086"
+            - name: GRPC_PORT
+              value: "9094"
+            - name: NOTIFICATION_GRPC
+              value: static://notification-service:9098
+
+---
+# Matching Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: matching-service
+spec:
+  ports:
+    - port: 9097
+      name: grpc
+    - port: 8087
+      name: http
+  selector:
+    app: matching-service
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: matching-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: matching-service
+  template:
+    metadata:
+      labels:
+        app: matching-service
+    spec:
+      containers:
+        - name: matching-service
+          image: matching-service:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 9097
+            - containerPort: 8087
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: docker
+            - name: REDIS_HOST
+              value: redis
+            - name: REDIS_PORT
+              value: "6379"
+            - name: SERVER_PORT
+              value: "8087"
+            - name: GRPC_PORT
+              value: "9097"
+            - name: TRIP_GRPC
+              value: static://trip-service:9094
+            - name: NOTIFICATION_GRPC
+              value: static://notification-service:9098
+
+---
+# Notification Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-service
+spec:
+  ports:
+    - port: 9098
+      name: grpc
+    - port: 8088
+      name: http
+  selector:
+    app: notification-service
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification-service
+  template:
+    metadata:
+      labels:
+        app: notification-service
+    spec:
+      containers:
+        - name: notification-service
+          image: notification-service:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 9098
+            - containerPort: 8088
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: docker
+            - name: DB_URL
+              value: jdbc:postgresql://postgres:5432/lastmile
+            - name: DB_USER
+              value: postgres
+            - name: DB_PASSWORD
+              value: postgres
+            - name: SERVER_PORT
+              value: "8088"
+            - name: GRPC_PORT
+              value: "9098"

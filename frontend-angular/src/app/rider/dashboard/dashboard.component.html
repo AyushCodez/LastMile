@@ -76,6 +76,7 @@
 
                 <div *ngIf="driverProfile" class="driver-details">
                     <h4>Driver & Vehicle</h4>
+                    <p><strong>Name:</strong> {{ driverName || 'Loading...' }}</p>
                     <p><strong>Vehicle:</strong> {{ driverProfile.color }} {{ driverProfile.model }}</p>
                     <p><strong>Plate:</strong> {{ driverProfile.vehicleNo }}</p>
                     <p><strong>Capacity:</strong> {{ driverProfile.capacity }} seats</p>

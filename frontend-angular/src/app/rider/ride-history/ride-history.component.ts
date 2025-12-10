@@ -7,6 +7,7 @@ import { DriverGrpcService } from '../../driver/driver-grpc.service';
 import { Trip } from '../../../proto/trip';
 import { DriverProfile } from '../../../proto/driver';
 import { AuthService } from '../../core/auth/auth.service';
+import { UserGrpcService } from '../../core/grpc/user.service';
 
 @Component({
   selector: 'app-ride-history',
@@ -19,6 +20,7 @@ export class RideHistoryComponent implements OnInit {
   areas: Map<string, string> = new Map();
   tripDetails: Map<string, Trip> = new Map();
   driverDetails: Map<string, DriverProfile> = new Map();
+  driverNames: Map<string, string> = new Map();
   selectedRide: RideStatus | null = null;
 
   constructor(
@@ -26,7 +28,8 @@ export class RideHistoryComponent implements OnInit {
     private stationService: StationService,
     private tripService: TripGrpcService,
     private driverGrpcService: DriverGrpcService,
-    private authService: AuthService
+    private authService: AuthService,
+    private userService: UserGrpcService
   ) { }
 
   ngOnInit(): void {
@@ -62,6 +65,10 @@ export class RideHistoryComponent implements OnInit {
           if (trip.driverId) {
             this.driverGrpcService.getDriverProfile(trip.driverId).subscribe(driver => {
               this.driverDetails.set(ride.intentId, driver);
+              // Fetch driver name
+              this.userService.getUser(driver.userId).subscribe(user => {
+                this.driverNames.set(ride.intentId, user.name);
+              });
             });
           }
         });
@@ -84,7 +91,7 @@ export class RideHistoryComponent implements OnInit {
     }
   }
 
-  selectRide(ride: RideStatus) {
+  selectRide(ride: RideStatus | null) {
     this.selectedRide = this.selectedRide === ride ? null : ride;
   }
 }

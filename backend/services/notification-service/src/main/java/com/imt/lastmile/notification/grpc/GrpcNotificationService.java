@@ -53,17 +53,18 @@ public class GrpcNotificationService extends NotificationServiceGrpc.Notificatio
     activeSubscribers.computeIfAbsent(userId, k -> new java.util.concurrent.CopyOnWriteArrayList<>()).add(responseObserver);
 
     // Replay recent history
-    try {
-        repo.findByUserIdOrderByCreatedAtDesc(userId).stream().limit(10).forEach(n -> {
-          try {
-            var builder = Notification.newBuilder().setUserId(n.getUserId()).setTitle(n.getTitle()).setBody(n.getBody());
-            // Do not parse metadata back for simplicity
-            responseObserver.onNext(builder.build());
-          } catch (Exception ignored) {}
-        });
-    } catch (Exception e) {
-        System.err.println("Error fetching history: " + e.getMessage());
-    }
+    // Replay recent history - DISABLED to prevent flood
+    // try {
+    //     repo.findByUserIdOrderByCreatedAtDesc(userId).stream().limit(10).forEach(n -> {
+    //       try {
+    //         var builder = Notification.newBuilder().setUserId(n.getUserId()).setTitle(n.getTitle()).setBody(n.getBody());
+    //         // Do not parse metadata back for simplicity
+    //         responseObserver.onNext(builder.build());
+    //       } catch (Exception ignored) {}
+    //     });
+    // } catch (Exception e) {
+    //     System.err.println("Error fetching history: " + e.getMessage());
+    // }
     
     // Keep stream open. Handle cancellation.
     // We can use a server-side interceptor or just wait.

@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DriverGrpcService } from '../driver-grpc.service';
 import { LocationGrpcService } from '../../core/grpc/location.service';
+import { RideRequestSnackbarComponent } from '../ride-request-snackbar/ride-request-snackbar.component';
 import { TripGrpcService } from '../../core/grpc/trip.service';
 import { NotificationService } from '../../core/grpc/notification.service';
 import { MatchingGrpcService } from '../../core/grpc/matching.service';
@@ -50,8 +51,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
       this.handleNotification(notif);
     });
 
-    // Subscribe to matches ONCE (Backend broadcasts all events, we filter client-side)
-    this.matchingService.subscribeMatches('');
+    // Subscribe to matches (Backend filters by station IDs)
+    // We will update subscription when route changes
+    this.matchingService.subscribeMatches([]);
 
     // Connect to matching events
     this.matchSubscription = this.matchingService.matchEvents$.subscribe({
@@ -104,6 +106,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
       this.driverService.getDriverByUserId(userId).subscribe({
         next: (profile) => {
           this.driverProfile = profile;
+          // Initialize occupancy from active trips
+          this.recalculateOccupancy();
+
+          // Initial check if we have a route
           this.checkActiveRoute();
         },
         error: (err) => {
@@ -133,6 +139,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
           this.isMoving = false;
           // Update initial location
           this.updateLocation();
+          this.checkMatches();
+          // Resubscribe with route stations
+          const stationIds = this.activeRoute.stops.map(s => s.areaId);
+          this.matchingService.subscribeMatches(stationIds);
         }
       }
     });
@@ -189,15 +199,21 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     this.matchingService.evaluateDriver(req).subscribe({
       next: (resp) => {
-        if (resp.matched) {
-          this.snackBar.open(resp.msg, 'Close', { duration: 5000 });
-          // Update occupancy
-          const addedPassengers = resp.results.reduce((acc, r) => acc + r.riderIds.length, 0);
-          this.occupancy += addedPassengers;
-          this.updateLocation(); // Broadcast new capacity
-        } else {
-          this.snackBar.open('No matches found: ' + resp.msg, 'Close', { duration: 3000 });
+        if (resp.matched && resp.results.length > 0) {
+          const result = resp.results[0];
+          const riderId = result.riderIds[0]; // Assuming single rider for now
+
+          const snackBarRef = this.snackBar.openFromComponent(RideRequestSnackbarComponent, {
+            data: { message: `New Ride Request: ${resp.msg}` },
+            duration: 10000, // Give them time to decide
+            verticalPosition: 'top'
+          });
+
+          snackBarRef.onAction().subscribe(() => {
+            this.acceptRide(result);
+          });
         }
+        // No "else" block for "No riders found" to avoid noise
       },
       error: (err) => {
         console.error('Error checking matches', err);
@@ -214,6 +230,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       this.currentStopIndex++;
       this.isMoving = false;
       this.updateLocation();
+      this.checkMatches();
 
       if (this.currentStopIndex >= this.activeRoute.stops.length) {
         this.endTrip();
@@ -280,32 +297,55 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   finishEndTrip() {
+    this.snackBar.open('Trip ended successfully', 'Close', { duration: 3000 });
     this.activeRoute = null;
     this.currentStopIndex = 0;
     this.isMoving = false;
     this.occupancy = 0;
-    this.router.navigate(['/driver/select-route']);
-    this.snackBar.open('Trip Ended', 'Close', { duration: 3000 });
+    this.router.navigate(['/driver']);
+  }
+
+  acceptRide(matchResult: any) {
+    this.tripService.createTrip(
+      this.authService.getUserId() || '',
+      this.activeRoute?.routeId || '',
+      matchResult.stationAreaId,
+      matchResult.riderIds,
+      matchResult.destinationAreaId,
+      new Date()
+    ).subscribe({
+      next: (trip) => {
+        this.snackBar.open('Ride Accepted! Trip created.', 'OK', { duration: 3000 });
+        this.recalculateOccupancy();
+        this.updateLocation();
+      },
+      error: (err) => {
+        this.snackBar.open('Failed to accept ride: ' + err.message, 'Close', { duration: 5000 });
+      }
+    });
   }
 
   handleNotification(notif: any) {
-    const tripId = notif.metadataMap.find((m: any) => m[0] === 'tripId')?.[1];
+    const tripId = notif.metadata?.['tripId'];
 
     if (tripId) {
       this.snackBar.open(`New Trip Assigned! Trip ID: ${tripId}`, 'View', { duration: 5000 });
-      // Fetch trip to update occupancy
-      this.tripService.getTrip(tripId).subscribe(trip => {
-        // Update occupancy
-        this.occupancy += trip.riderIds.length;
-        this.updateLocation();
-      });
+      this.recalculateOccupancy();
       return;
     }
 
-    const passengerCount = notif.metadataMap.find((m: any) => m[0] === 'passengerCount')?.[1] || '1';
-    const riderId = notif.metadataMap.find((m: any) => m[0] === 'riderId')?.[1];
-    const stationId = notif.metadataMap.find((m: any) => m[0] === 'stationId')?.[1];
-    const destId = notif.metadataMap.find((m: any) => m[0] === 'destinationId')?.[1];
+    const passengerCount = notif.metadata?.['passengerCount'] || '1';
+    const riderId = notif.metadata?.['riderId'];
+    const stationId = notif.metadata?.['stationId']; // Note: metadata keys might vary
+    const destId = notif.metadata?.['destinationId'];
+
+    // Construct a matchResult-like object for reuse
+    const matchResult = {
+      stationAreaId: stationId,
+      destinationAreaId: destId,
+      riderIds: [riderId],
+      passengerCount: parseInt(passengerCount)
+    };
 
     const snackBarRef = this.snackBar.open(
       `Ride Request: ${passengerCount} passengers. ${notif.body}`,
@@ -314,33 +354,28 @@ export class DashboardComponent implements OnInit, OnDestroy {
     );
 
     snackBarRef.onAction().subscribe(() => {
-      this.acceptRide(riderId, stationId, destId, parseInt(passengerCount));
-    });
-  }
-
-  acceptRide(riderId: string, stationId: string, destId: string, count: number) {
-    if (!this.driverProfile || !this.activeRoute) return;
-
-    this.tripService.createTrip(
-      this.driverProfile.driverId,
-      this.activeRoute.routeId,
-      stationId,
-      [riderId],
-      destId
-    ).subscribe({
-      next: (trip) => {
-        this.snackBar.open('Ride Accepted!', 'Close', { duration: 3000 });
-        this.occupancy += count;
-        this.updateLocation();
-      },
-      error: (err) => {
-        console.error('Failed to accept ride', err);
-        this.snackBar.open('Failed to accept ride', 'Close', { duration: 3000 });
-      }
+      this.acceptRide(matchResult);
     });
   }
 
   getAreaName(id: string): string {
     return this.areas.get(id) || id;
+  }
+
+  recalculateOccupancy() {
+    if (!this.driverProfile) return;
+    this.tripService.getTrips(this.driverProfile.driverId, '').subscribe({
+      next: (res) => {
+        // Count total riders in active trips
+        let total = 0;
+        const activeTrips = res.trips.filter(t => t.status === 'ACTIVE' || t.status === 'IN_PROGRESS' || t.status === 'CREATED' || t.status === 'SCHEDULED');
+        activeTrips.forEach(t => {
+          total += t.riderIds.length;
+        });
+        this.occupancy = total;
+        this.updateLocation();
+      },
+      error: (err) => console.error('Failed to recalculate occupancy', err)
+    });
   }
 }

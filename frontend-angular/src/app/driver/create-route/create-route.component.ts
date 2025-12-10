@@ -22,6 +22,7 @@ export class CreateRouteComponent implements OnInit {
   allAreas: Area[] = [];
   selectedStops: RouteStopItem[] = [];
   availableNextStops: Area[] = [];
+  driverId: string | null = null;
 
   constructor(
     private stationService: StationService,
@@ -39,6 +40,24 @@ export class CreateRouteComponent implements OnInit {
       },
       error: (err) => console.error(err)
     });
+
+    const userId = this.authService.getUserId();
+    if (userId) {
+      this.driverService.getDriverByUserId(userId).subscribe({
+        next: (profile) => {
+          this.driverId = profile.driverId;
+        },
+        error: (err) => {
+          console.error('Driver profile not found', err);
+          this.snackBar.open('Please register your vehicle first', 'Register', { duration: 5000 })
+            .onAction().subscribe(() => {
+              this.router.navigate(['/driver/vehicle']);
+            });
+          // Optional: Redirect immediately or disable form
+          // this.router.navigate(['/driver/vehicle']);
+        }
+      });
+    }
   }
 
   addStop(areaId: string) {
@@ -91,10 +110,12 @@ export class CreateRouteComponent implements OnInit {
       arrivalOffsetMinutes: s.arrivalOffset
     }));
 
-    const userId = this.authService.getUserId();
-    if (!userId) return;
+    if (!this.driverId) {
+      this.snackBar.open('Driver profile not loaded. Please register vehicle.', 'Close', { duration: 3000 });
+      return;
+    }
 
-    this.driverService.registerRoute(userId, stops).subscribe({
+    this.driverService.registerRoute(this.driverId, stops).subscribe({
       next: (res) => {
         this.snackBar.open('Route saved successfully', 'Close', { duration: 3000 });
         this.router.navigate(['/driver/select-route']);

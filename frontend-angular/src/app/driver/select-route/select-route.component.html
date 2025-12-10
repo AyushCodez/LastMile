@@ -11,11 +11,11 @@
             </div>
 
             <mat-list *ngIf="routes.length > 0">
-                <mat-list-item *ngFor="let route of routes">
+                <mat-list-item *ngFor="let route of routes" (click)="selectRoute(route)" style="cursor: pointer;">
                     <mat-icon matListItemIcon>alt_route</mat-icon>
                     <div matListItemTitle>{{ getRouteDescription(route) }}</div>
-                    <mat-card-subtitle>Created: {{ route.createdAt | date }}</mat-card-subtitle>
-                    <button mat-icon-button (click)="selectRoute(route)">
+                    <div matListItemLine>Created: {{ route.createdAt | date }}</div>
+                    <button mat-icon-button>
                         <mat-icon>arrow_forward</mat-icon>
                     </button>
                 </mat-list-item>

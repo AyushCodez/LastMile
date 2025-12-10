@@ -45,6 +45,7 @@ export interface MatchEvent {
 
 export interface SubscribeRequest {
   clientId: string;
+  stationIds: string[];
 }
 
 export interface AddRiderIntentRequest {
@@ -562,13 +563,16 @@ export const MatchEvent: MessageFns<MatchEvent> = {
 };
 
 function createBaseSubscribeRequest(): SubscribeRequest {
-  return { clientId: "" };
+  return { clientId: "", stationIds: [] };
 }
 
 export const SubscribeRequest: MessageFns<SubscribeRequest> = {
   encode(message: SubscribeRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.clientId !== "") {
       writer.uint32(10).string(message.clientId);
+    }
+    for (const v of message.stationIds) {
+      writer.uint32(18).string(v!);
     }
     return writer;
   },
@@ -588,6 +592,14 @@ export const SubscribeRequest: MessageFns<SubscribeRequest> = {
           message.clientId = reader.string();
           continue;
         }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.stationIds.push(reader.string());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -598,13 +610,21 @@ export const SubscribeRequest: MessageFns<SubscribeRequest> = {
   },
 
   fromJSON(object: any): SubscribeRequest {
-    return { clientId: isSet(object.clientId) ? globalThis.String(object.clientId) : "" };
+    return {
+      clientId: isSet(object.clientId) ? globalThis.String(object.clientId) : "",
+      stationIds: globalThis.Array.isArray(object?.stationIds)
+        ? object.stationIds.map((e: any) => globalThis.String(e))
+        : [],
+    };
   },
 
   toJSON(message: SubscribeRequest): unknown {
     const obj: any = {};
     if (message.clientId !== "") {
       obj.clientId = message.clientId;
+    }
+    if (message.stationIds?.length) {
+      obj.stationIds = message.stationIds;
     }
     return obj;
   },
@@ -615,6 +635,7 @@ export const SubscribeRequest: MessageFns<SubscribeRequest> = {
   fromPartial<I extends Exact<DeepPartial<SubscribeRequest>, I>>(object: I): SubscribeRequest {
     const message = createBaseSubscribeRequest();
     message.clientId = object.clientId ?? "";
+    message.stationIds = object.stationIds?.map((e) => e) || [];
     return message;
   },
 };

@@ -27,55 +27,26 @@ export class MatchingGrpcService {
     // Assuming subscribeMatches will still use the grpc-web stream approach for now,
     // as the instruction snippet for it was incomplete and mixed with other methods.
     // If the new client supports streaming differently, this would need a full rewrite.
-    subscribeMatches(stationAreaId: string) {
-        const req: SubscribeRequest = { clientId: this.authService.getUserId() || '' };
+    subscribeMatches(stationIds: string[]) {
+        const req: SubscribeRequest = {
+            clientId: this.authService.getUserId() || '',
+            stationIds: stationIds
+        };
 
-        // This still uses the old client structure (this.client) which was removed.
-        // Assuming it should use the new matchingClient if it supports streaming similarly.
-        // However, the instruction did not provide a full replacement for this method.
-        // For now, I'll adapt it to use the new client if it has a similar method,
-        // but the `grpcWeb.ClientReadableStream` type might not be directly compatible.
-        // Given the instruction's partial and malformed snippet for this method,
-        // I'm keeping the original logic but noting the client change.
-        // If MatchingServiceClientImpl does not have a subscribeMatches method that returns a stream,
-        // this part would need a more significant change based on the actual API.
-        // For now, I'll assume a similar stream interface exists or is intended.
-        // The instruction snippet was:
-        // const stream = this.client.subscribeMatches(req, this.authService.getMetadata());
-        // I'll assume it should be:
-        // const stream = this.matchingClient.subscribeMatches(req, this.authService.getMetadata());
-        // But MatchingServiceClientImpl typically uses promises/observables directly.
-        // Given the instruction's ambiguity, I'll keep the original stream logic but point out the client change.
-        // If the new client uses `from(this.matchingClient.SubscribeMatches(req))` for streaming,
-        // the implementation would be entirely different.
-        // For now, I'll keep the original stream handling but acknowledge the client change.
-        // The instruction snippet for subscribeMatches was incomplete and contained another method definition.
-        // I will keep the original implementation for subscribeMatches, but remove the `this.client` reference
-        // as it's no longer available, and the instruction didn't provide a full replacement for this method.
-        // This method might need a complete rewrite based on how `MatchingServiceClientImpl` handles streams.
-        // As the instruction didn't provide a full replacement, I'm commenting out the body to avoid compilation errors
-        // due to `this.client` being removed, and `MatchingServiceClientImpl` not having a direct `subscribeMatches` method
-        // that returns a `grpcWeb.ClientReadableStream`.
-        /*
-        const stream = this.matchingClient.subscribeMatches(req, this.authService.getMetadata()); // This line would likely fail
-
-        stream.on('data', (event: MatchEvent) => {
-            this.ngZone.run(() => {
-                this.matchEventsSubject.next(event.toObject());
-            });
+        this.matchingClient.SubscribeMatches(req).subscribe({
+            next: (event: MatchEvent) => {
+                this.ngZone.run(() => {
+                    console.log('Received MatchEvent:', event);
+                    this.matchEventsSubject.next(event);
+                });
+            },
+            error: (err) => {
+                console.error('Matching stream error:', err);
+            },
+            complete: () => {
+                console.log('Matching stream ended');
+            }
         });
-
-        stream.on('status', (status: grpcWeb.Status) => {
-            console.log('Matching stream status:', status);
-        });
-
-        stream.on('end', () => {
-            console.log('Matching stream ended');
-        });
-        */
-        // The instruction snippet for subscribeMatches was malformed, containing the start of addRiderIntent.
-        // I am removing the original subscribeMatches body as `this.client` is gone and no full replacement was given.
-        // This method will need to be re-implemented based on the new `MatchingServiceClientImpl`'s streaming capabilities.
     }
 
     addRiderIntent(riderId: string, stationAreaId: string, destinationAreaId: string, partySize: number): Observable<boolean> {
@@ -93,22 +64,7 @@ export class MatchingGrpcService {
     }
 
     evaluateDriver(req: EvaluateDriverRequest): Observable<MatchResponse> {
-        return new Observable(observer => {
-            // The original implementation used a callback-based gRPC client.
-            // The new client `MatchingServiceClientImpl` is promise-based.
-            // This method needs to be updated to use `from(this.matchingClient.EvaluateDriver(req))`.
-            // The instruction provided an incomplete snippet for this method.
-            // I will update it to use the new promise-based client.
-            from(this.matchingClient.EvaluateDriver(req)).subscribe({
-                next: (response: MatchResponse) => {
-                    observer.next(response);
-                    observer.complete();
-                },
-                error: (err: any) => {
-                    observer.error(err);
-                }
-            });
-        });
+        return from(this.matchingClient.EvaluateDriver(req));
     }
 
     cancelRideIntent(riderId: string, stationAreaId: string): Observable<boolean> {

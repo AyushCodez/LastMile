@@ -17,6 +17,7 @@ import { Subscription, timer } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 
 import { AuthService } from '../../core/auth/auth.service';
+import { UserGrpcService } from '../../core/grpc/user.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -32,6 +33,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   activeTrip: Trip | null = null;
   driverLocation: DriverSnapshot | null = null;
   driverProfile: DriverProfile | null = null;
+  driverName: string = '';
 
   private notifSubscription: Subscription | null = null;
   private locSubscription: Subscription | null = null;
@@ -46,7 +48,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
     private snackBar: MatSnackBar,
     private authService: AuthService,
     private driverGrpcService: DriverGrpcService,
-    private matchingService: MatchingGrpcService
+    private matchingService: MatchingGrpcService,
+    private userService: UserGrpcService
   ) {
     this.rideForm = this.fb.group({
       stationId: ['', Validators.required],
@@ -154,6 +157,27 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   cancelRequest() {
     const userId = this.authService.getUserId();
+
+    // If we have an active trip, cancel it directly
+    if (this.activeTrip) {
+      this.tripService.updateTripStatus(this.activeTrip.tripId, 'CANCELLED').subscribe({
+        next: () => {
+          this.snackBar.open('Trip Cancelled', 'Close', { duration: 3000 });
+          this.dashboardState = 'IDLE';
+          this.activeTrip = null;
+          this.driverLocation = null;
+          this.driverProfile = null;
+          if (this.locSubscription) this.locSubscription.unsubscribe();
+        },
+        error: (err) => {
+          console.error('Failed to cancel trip', err);
+          this.snackBar.open('Failed to cancel trip', 'Close', { duration: 3000 });
+        }
+      });
+      return;
+    }
+
+    // Otherwise cancel the intent
     const stationId = this.rideForm.get('stationId')?.value;
 
     if (userId && stationId) {
@@ -185,18 +209,16 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   handleNotification(notif: any) {
     console.log('Received notification:', notif);
+
+    // Safeguard: Ignore old notifications (e.g., > 5 mins old) if timestamp is available
+    // Note: ts-proto might not map createdAt if it's not in the proto or if it's a Timestamp object
+    // For now, we rely on the backend fix, but we can also check if the trip is already completed.
+
     this.snackBar.open(`Notification: ${notif.body}`, 'Close', { duration: 5000 });
 
     let tripId: string | null = null;
-    if (notif.metadataMap) {
-      if (Array.isArray(notif.metadataMap)) {
-        // AsObject typically converts Map to Array<[key, value]>
-        const entry = notif.metadataMap.find((e: any) => e[0] === 'tripId');
-        if (entry) tripId = entry[1];
-      } else if (typeof notif.metadataMap === 'object') {
-        // Fallback if it's a plain object
-        tripId = notif.metadataMap['tripId'];
-      }
+    if (notif.metadata) {
+      tripId = notif.metadata['tripId'];
     }
 
     if (tripId) {
@@ -230,6 +252,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.driverGrpcService.getDriverProfile(trip.driverId).subscribe({
           next: (profile) => {
             this.driverProfile = profile;
+            // Fetch driver name
+            this.userService.getUser(profile.userId).subscribe(user => {
+              this.driverName = user.name;
+            });
           },
           error: (err) => console.error('Failed to load driver profile', err)
         });

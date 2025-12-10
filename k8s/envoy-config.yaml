@@ -1,0 +1,184 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: envoy-config
+data:
+  envoy.yaml: |
+    admin:
+      access_log_path: /tmp/admin_access.log
+      address:
+        socket_address: { address: 0.0.0.0, port_value: 9901 }
+
+    static_resources:
+      listeners:
+        - name: listener_0
+          address:
+            socket_address: { address: 0.0.0.0, port_value: 8090 }
+          filter_chains:
+            - filters:
+                - name: envoy.filters.network.http_connection_manager
+                  typed_config:
+                    "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+                    codec_type: AUTO
+                    stat_prefix: ingress_http
+                    route_config:
+                      name: local_route
+                      virtual_hosts:
+                        - name: local_service
+                          domains: ["*"]
+                          routes:
+                            - match: { prefix: "/lastmile.user.UserService" }
+                              route: { cluster: user_service, timeout: 0s, max_stream_duration: { grpc_timeout_header_max: 0s } }
+                            - match: { prefix: "/lastmile.rider.RiderService" }
+                              route: { cluster: rider_service, timeout: 0s, max_stream_duration: { grpc_timeout_header_max: 0s } }
+                            - match: { prefix: "/lastmile.driver.DriverService" }
+                              route: { cluster: driver_service, timeout: 0s, max_stream_duration: { grpc_timeout_header_max: 0s } }
+                            - match: { prefix: "/lastmile.location.LocationService" }
+                              route: { cluster: location_service, timeout: 0s, max_stream_duration: { grpc_timeout_header_max: 0s } }
+                            - match: { prefix: "/lastmile.station.StationService" }
+                              route: { cluster: station_service, timeout: 0s, max_stream_duration: { grpc_timeout_header_max: 0s } }
+                            - match: { prefix: "/lastmile.trip.TripService" }
+                              route: { cluster: trip_service, timeout: 0s, max_stream_duration: { grpc_timeout_header_max: 0s } }
+                            - match: { prefix: "/lastmile.matching.MatchingService" }
+                              route: { cluster: matching_service, timeout: 0s, max_stream_duration: { grpc_timeout_header_max: 0s } }
+                            - match: { prefix: "/lastmile.notification.NotificationService" }
+                              route: { cluster: notification_service, timeout: 0s, max_stream_duration: { grpc_timeout_header_max: 0s } }
+                          cors:
+                            allow_origin_string_match:
+                              - prefix: "*"
+                            allow_methods: GET, PUT, DELETE, POST, OPTIONS
+                            allow_headers: keep-alive,user-agent,cache-control,content-type,content-transfer-encoding,custom-header-1,x-accept-content-transfer-encoding,x-accept-response-streaming,x-user-agent,x-grpc-web,grpc-timeout,authorization
+                            max_age: "1728000"
+                            expose_headers: custom-header-1,grpc-status,grpc-message
+                    http_filters:
+                      - name: envoy.filters.http.cors
+                        typed_config:
+                          "@type": type.googleapis.com/envoy.extensions.filters.http.cors.v3.Cors
+                      - name: envoy.filters.http.grpc_web
+                        typed_config:
+                          "@type": type.googleapis.com/envoy.extensions.filters.http.grpc_web.v3.GrpcWeb
+                      - name: envoy.filters.http.router
+                        typed_config:
+                          "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+
+      clusters:
+        - name: user_service
+          connect_timeout: 10s
+          type: STRICT_DNS
+          dns_lookup_family: V4_ONLY
+          http2_protocol_options: {}
+          lb_policy: ROUND_ROBIN
+          load_assignment:
+            cluster_name: user_service
+            endpoints:
+              - lb_endpoints:
+                  - endpoint:
+                      address:
+                        socket_address:
+                          address: user-service
+                          port_value: 9091
+        - name: rider_service
+          connect_timeout: 10s
+          type: STRICT_DNS
+          dns_lookup_family: V4_ONLY
+          http2_protocol_options: {}
+          lb_policy: ROUND_ROBIN
+          load_assignment:
+            cluster_name: rider_service
+            endpoints:
+              - lb_endpoints:
+                  - endpoint:
+                      address:
+                        socket_address:
+                          address: rider-service
+                          port_value: 9093
+        - name: driver_service
+          connect_timeout: 10s
+          type: STRICT_DNS
+          dns_lookup_family: V4_ONLY
+          http2_protocol_options: {}
+          lb_policy: ROUND_ROBIN
+          load_assignment:
+            cluster_name: driver_service
+            endpoints:
+              - lb_endpoints:
+                  - endpoint:
+                      address:
+                        socket_address:
+                          address: driver-service
+                          port_value: 9092
+        - name: location_service
+          connect_timeout: 10s
+          type: STRICT_DNS
+          dns_lookup_family: V4_ONLY
+          http2_protocol_options: {}
+          lb_policy: ROUND_ROBIN
+          load_assignment:
+            cluster_name: location_service
+            endpoints:
+              - lb_endpoints:
+                  - endpoint:
+                      address:
+                        socket_address:
+                          address: location-service
+                          port_value: 9096
+        - name: station_service
+          connect_timeout: 10s
+          type: STRICT_DNS
+          dns_lookup_family: V4_ONLY
+          http2_protocol_options: {}
+          lb_policy: ROUND_ROBIN
+          load_assignment:
+            cluster_name: station_service
+            endpoints:
+              - lb_endpoints:
+                  - endpoint:
+                      address:
+                        socket_address:
+                          address: station-service
+                          port_value: 9095
+        - name: trip_service
+          connect_timeout: 10s
+          type: STRICT_DNS
+          dns_lookup_family: V4_ONLY
+          http2_protocol_options: {}
+          lb_policy: ROUND_ROBIN
+          load_assignment:
+            cluster_name: trip_service
+            endpoints:
+              - lb_endpoints:
+                  - endpoint:
+                      address:
+                        socket_address:
+                          address: trip-service
+                          port_value: 9094
+        - name: matching_service
+          connect_timeout: 10s
+          type: STRICT_DNS
+          dns_lookup_family: V4_ONLY
+          http2_protocol_options: {}
+          lb_policy: ROUND_ROBIN
+          load_assignment:
+            cluster_name: matching_service
+            endpoints:
+              - lb_endpoints:
+                  - endpoint:
+                      address:
+                        socket_address:
+                          address: matching-service
+                          port_value: 9097
+        - name: notification_service
+          connect_timeout: 10s
+          type: STRICT_DNS
+          dns_lookup_family: V4_ONLY
+          http2_protocol_options: {}
+          lb_policy: ROUND_ROBIN
+          load_assignment:
+            cluster_name: notification_service
+            endpoints:
+              - lb_endpoints:
+                  - endpoint:
+                      address:
+                        socket_address:
+                          address: notification-service
+                          port_value: 9098

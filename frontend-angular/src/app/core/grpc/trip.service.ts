@@ -18,13 +18,14 @@ export class TripGrpcService {
         this.tripClient = new TripServiceClientImpl(rpc);
     }
 
-    createTrip(driverId: string, routeId: string, stationAreaId: string, riderIds: string[], destinationAreaId: string, scheduledDeparture?: Date): Observable<Trip> {
+    createTrip(driverId: string, routeId: string, stationAreaId: string, riderIds: string[], destinationAreaId: string, passengerCount: number, scheduledDeparture?: Date): Observable<Trip> {
         const req: CreateTripRequest = {
             driverId,
             routeId,
             stationAreaId,
             riderIds,
             destinationAreaId,
+            passengerCount,
             scheduledDeparture
         };
 

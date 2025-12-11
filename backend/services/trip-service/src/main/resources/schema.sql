@@ -50,7 +50,8 @@ create table if not exists trips (
   station_area_id varchar(64) not null references areas(area_id),
   destination_area_id varchar(64) not null references areas(area_id),
   status varchar(16) not null,
-  scheduled_departure timestamptz not null
+  scheduled_departure timestamptz not null,
+  passenger_count integer not null default 1
 );
 
 create table if not exists trip_riders (

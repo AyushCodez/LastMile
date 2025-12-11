@@ -9,6 +9,7 @@ service LocationService {
   rpc UpdateDriverLocation(DriverTelemetry) returns (Ack);
   rpc GetDriverSnapshot(DriverId) returns (DriverSnapshot);
   rpc GetDriverEta(DriverEtaRequest) returns (DriverEta);
+  rpc SubscribeDriverUpdates(DriverId) returns (stream DriverSnapshot);
 }
 
 message DriverTelemetry {

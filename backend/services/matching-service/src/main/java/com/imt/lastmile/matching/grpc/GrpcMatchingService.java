@@ -65,12 +65,17 @@ public class GrpcMatchingService extends MatchingServiceGrpc.MatchingServiceImpl
     // Do NOT create trip automatically. Let driver accept first.
     String tripId = ""; 
 
+    int totalPassengers = riders.stream().mapToInt(RiderIntent::getPartySize).sum();
+    // Fallback if partySize is 0 for some reason (backward compat)
+    if (totalPassengers == 0 && !riders.isEmpty()) totalPassengers = riders.size();
+
     MatchResult result = MatchResult.newBuilder()
       .setTripId(tripId)
       .setDriverId(request.getDriverId())
       .setStationAreaId(request.getStationAreaId())
       .setDestinationAreaId(request.getDestinationAreaId())
       .addAllRiderIds(riders.stream().map(RiderIntent::getRiderId).toList())
+      .setPassengerCount(totalPassengers)
       .build();
     MatchResponse resp = MatchResponse.newBuilder()
       .setMatched(true)
@@ -90,7 +95,7 @@ public class GrpcMatchingService extends MatchingServiceGrpc.MatchingServiceImpl
 
     // Broadcast event to subscribers (filtered)
     MatchEvent event = MatchEvent.newBuilder()
-      .setEventId("evt-" + UUID.randomUUID().toString().substring(0, 8))
+      .setEventId("match-found-" + UUID.randomUUID().toString().substring(0, 8))
       .setStationAreaId(request.getStationAreaId())
       .setResult(result)
       .build();

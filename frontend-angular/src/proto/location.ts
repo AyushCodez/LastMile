@@ -619,7 +619,9 @@ export interface LocationService {
   StreamDriverTelemetry(request: Observable<DriverTelemetry>): Promise<Ack>;
   UpdateDriverLocation(request: DriverTelemetry): Promise<Ack>;
   GetDriverSnapshot(request: DriverId): Promise<DriverSnapshot>;
+  GetDriverSnapshot(request: DriverId): Promise<DriverSnapshot>;
   GetDriverEta(request: DriverEtaRequest): Promise<DriverEta>;
+  SubscribeDriverUpdates(request: DriverId): Observable<DriverSnapshot>;
 }
 
 export const LocationServiceServiceName = "lastmile.location.LocationService";
@@ -632,7 +634,9 @@ export class LocationServiceClientImpl implements LocationService {
     this.StreamDriverTelemetry = this.StreamDriverTelemetry.bind(this);
     this.UpdateDriverLocation = this.UpdateDriverLocation.bind(this);
     this.GetDriverSnapshot = this.GetDriverSnapshot.bind(this);
+    this.GetDriverSnapshot = this.GetDriverSnapshot.bind(this);
     this.GetDriverEta = this.GetDriverEta.bind(this);
+    this.SubscribeDriverUpdates = this.SubscribeDriverUpdates.bind(this);
   }
   StreamDriverTelemetry(request: Observable<DriverTelemetry>): Promise<Ack> {
     const data = request.pipe(map((request) => DriverTelemetry.encode(request).finish()));
@@ -656,6 +660,12 @@ export class LocationServiceClientImpl implements LocationService {
     const data = DriverEtaRequest.encode(request).finish();
     const promise = this.rpc.request(this.service, "GetDriverEta", data);
     return promise.then((data) => DriverEta.decode(new BinaryReader(data)));
+  }
+
+  SubscribeDriverUpdates(request: DriverId): Observable<DriverSnapshot> {
+    const data = DriverId.encode(request).finish();
+    const result = this.rpc.serverStreamingRequest(this.service, "SubscribeDriverUpdates", data);
+    return result.pipe(map((data) => DriverSnapshot.decode(new BinaryReader(data))));
   }
 }
 

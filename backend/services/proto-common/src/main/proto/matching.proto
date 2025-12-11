@@ -28,6 +28,7 @@ message MatchResult {
   string station_area_id = 3;
   string destination_area_id = 4;
   repeated string rider_ids = 5;
+  int32 passenger_count = 6;
 }
 
 message MatchResponse {

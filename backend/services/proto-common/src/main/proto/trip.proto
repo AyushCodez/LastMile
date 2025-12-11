@@ -18,6 +18,7 @@ message CreateTripRequest {
   repeated string rider_ids = 4;
   string destination_area_id = 5;
   google.protobuf.Timestamp scheduled_departure = 6;
+  int32 passenger_count = 7;
 }
 
 message Trip {
@@ -29,6 +30,7 @@ message Trip {
   repeated string rider_ids = 6;
   string status = 7;
   google.protobuf.Timestamp scheduled_departure = 8;
+  int32 passenger_count = 9;
 }
 
 message UpdateTripRequest { string trip_id = 1; string status = 2; }

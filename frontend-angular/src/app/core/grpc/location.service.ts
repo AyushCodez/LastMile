@@ -37,4 +37,9 @@ export class LocationGrpcService {
         const req: DriverId = { id: driverId };
         return from(this.locationClient.GetDriverSnapshot(req));
     }
+
+    subscribeDriverUpdates(driverId: string): Observable<DriverSnapshot> {
+        const req: DriverId = { id: driverId };
+        return this.locationClient.SubscribeDriverUpdates(req);
+    }
 }

@@ -29,6 +29,7 @@ export interface MatchResult {
   stationAreaId: string;
   destinationAreaId: string;
   riderIds: string[];
+  passengerCount: number;
 }
 
 export interface MatchResponse {
@@ -253,7 +254,7 @@ export const EvaluateDriverRequest: MessageFns<EvaluateDriverRequest> = {
 };
 
 function createBaseMatchResult(): MatchResult {
-  return { tripId: "", driverId: "", stationAreaId: "", destinationAreaId: "", riderIds: [] };
+  return { tripId: "", driverId: "", stationAreaId: "", destinationAreaId: "", riderIds: [], passengerCount: 0 };
 }
 
 export const MatchResult: MessageFns<MatchResult> = {
@@ -272,6 +273,9 @@ export const MatchResult: MessageFns<MatchResult> = {
     }
     for (const v of message.riderIds) {
       writer.uint32(42).string(v!);
+    }
+    if (message.passengerCount !== 0) {
+      writer.uint32(48).int32(message.passengerCount);
     }
     return writer;
   },
@@ -323,6 +327,14 @@ export const MatchResult: MessageFns<MatchResult> = {
           message.riderIds.push(reader.string());
           continue;
         }
+        case 6: {
+          if (tag !== 48) {
+            break;
+          }
+
+          message.passengerCount = reader.int32();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -339,6 +351,7 @@ export const MatchResult: MessageFns<MatchResult> = {
       stationAreaId: isSet(object.stationAreaId) ? globalThis.String(object.stationAreaId) : "",
       destinationAreaId: isSet(object.destinationAreaId) ? globalThis.String(object.destinationAreaId) : "",
       riderIds: globalThis.Array.isArray(object?.riderIds) ? object.riderIds.map((e: any) => globalThis.String(e)) : [],
+      passengerCount: isSet(object.passengerCount) ? globalThis.Number(object.passengerCount) : 0,
     };
   },
 
@@ -359,6 +372,9 @@ export const MatchResult: MessageFns<MatchResult> = {
     if (message.riderIds?.length) {
       obj.riderIds = message.riderIds;
     }
+    if (message.passengerCount !== 0) {
+      obj.passengerCount = Math.round(message.passengerCount);
+    }
     return obj;
   },
 
@@ -372,6 +388,7 @@ export const MatchResult: MessageFns<MatchResult> = {
     message.stationAreaId = object.stationAreaId ?? "";
     message.destinationAreaId = object.destinationAreaId ?? "";
     message.riderIds = object.riderIds?.map((e) => e) || [];
+    message.passengerCount = object.passengerCount ?? 0;
     return message;
   },
 };

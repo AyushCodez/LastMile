@@ -17,6 +17,7 @@ export interface CreateTripRequest {
   riderIds: string[];
   destinationAreaId: string;
   scheduledDeparture: Date | undefined;
+  passengerCount: number;
 }
 
 export interface Trip {
@@ -28,6 +29,7 @@ export interface Trip {
   riderIds: string[];
   status: string;
   scheduledDeparture: Date | undefined;
+  passengerCount: number;
 }
 
 export interface UpdateTripRequest {
@@ -56,6 +58,7 @@ function createBaseCreateTripRequest(): CreateTripRequest {
     riderIds: [],
     destinationAreaId: "",
     scheduledDeparture: undefined,
+    passengerCount: 0,
   };
 }
 
@@ -78,6 +81,9 @@ export const CreateTripRequest: MessageFns<CreateTripRequest> = {
     }
     if (message.scheduledDeparture !== undefined) {
       Timestamp.encode(toTimestamp(message.scheduledDeparture), writer.uint32(50).fork()).join();
+    }
+    if (message.passengerCount !== 0) {
+      writer.uint32(56).int32(message.passengerCount);
     }
     return writer;
   },
@@ -137,6 +143,14 @@ export const CreateTripRequest: MessageFns<CreateTripRequest> = {
           message.scheduledDeparture = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
           continue;
         }
+        case 7: {
+          if (tag !== 56) {
+            break;
+          }
+
+          message.passengerCount = reader.int32();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -154,6 +168,7 @@ export const CreateTripRequest: MessageFns<CreateTripRequest> = {
       riderIds: globalThis.Array.isArray(object?.riderIds) ? object.riderIds.map((e: any) => globalThis.String(e)) : [],
       destinationAreaId: isSet(object.destinationAreaId) ? globalThis.String(object.destinationAreaId) : "",
       scheduledDeparture: isSet(object.scheduledDeparture) ? fromJsonTimestamp(object.scheduledDeparture) : undefined,
+      passengerCount: isSet(object.passengerCount) ? globalThis.Number(object.passengerCount) : 0,
     };
   },
 
@@ -177,6 +192,9 @@ export const CreateTripRequest: MessageFns<CreateTripRequest> = {
     if (message.scheduledDeparture !== undefined) {
       obj.scheduledDeparture = message.scheduledDeparture.toISOString();
     }
+    if (message.passengerCount !== 0) {
+      obj.passengerCount = Math.round(message.passengerCount);
+    }
     return obj;
   },
 
@@ -191,6 +209,7 @@ export const CreateTripRequest: MessageFns<CreateTripRequest> = {
     message.riderIds = object.riderIds?.map((e) => e) || [];
     message.destinationAreaId = object.destinationAreaId ?? "";
     message.scheduledDeparture = object.scheduledDeparture ?? undefined;
+    message.passengerCount = object.passengerCount ?? 0;
     return message;
   },
 };
@@ -205,6 +224,7 @@ function createBaseTrip(): Trip {
     riderIds: [],
     status: "",
     scheduledDeparture: undefined,
+    passengerCount: 0,
   };
 }
 
@@ -233,6 +253,9 @@ export const Trip: MessageFns<Trip> = {
     }
     if (message.scheduledDeparture !== undefined) {
       Timestamp.encode(toTimestamp(message.scheduledDeparture), writer.uint32(66).fork()).join();
+    }
+    if (message.passengerCount !== 0) {
+      writer.uint32(72).int32(message.passengerCount);
     }
     return writer;
   },
@@ -308,6 +331,14 @@ export const Trip: MessageFns<Trip> = {
           message.scheduledDeparture = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
           continue;
         }
+        case 9: {
+          if (tag !== 72) {
+            break;
+          }
+
+          message.passengerCount = reader.int32();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -327,6 +358,7 @@ export const Trip: MessageFns<Trip> = {
       riderIds: globalThis.Array.isArray(object?.riderIds) ? object.riderIds.map((e: any) => globalThis.String(e)) : [],
       status: isSet(object.status) ? globalThis.String(object.status) : "",
       scheduledDeparture: isSet(object.scheduledDeparture) ? fromJsonTimestamp(object.scheduledDeparture) : undefined,
+      passengerCount: isSet(object.passengerCount) ? globalThis.Number(object.passengerCount) : 0,
     };
   },
 
@@ -356,6 +388,9 @@ export const Trip: MessageFns<Trip> = {
     if (message.scheduledDeparture !== undefined) {
       obj.scheduledDeparture = message.scheduledDeparture.toISOString();
     }
+    if (message.passengerCount !== 0) {
+      obj.passengerCount = Math.round(message.passengerCount);
+    }
     return obj;
   },
 
@@ -372,6 +407,7 @@ export const Trip: MessageFns<Trip> = {
     message.riderIds = object.riderIds?.map((e) => e) || [];
     message.status = object.status ?? "";
     message.scheduledDeparture = object.scheduledDeparture ?? undefined;
+    message.passengerCount = object.passengerCount ?? 0;
     return message;
   },
 };

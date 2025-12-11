@@ -268,13 +268,15 @@ export class DashboardComponent implements OnInit, OnDestroy {
     if (this.locSubscription) this.locSubscription.unsubscribe();
 
     // Poll every 5 seconds
-    this.locSubscription = timer(0, 5000).pipe(
-      switchMap(() => this.locationService.getDriverSnapshot(driverId))
-    ).subscribe({
+    // Subscribe to driver location stream
+    this.locSubscription = this.locationService.subscribeDriverUpdates(driverId).subscribe({
       next: (loc) => {
         this.driverLocation = loc;
       },
-      error: (err) => console.error('Loc poll error', err)
+      error: (err) => {
+        console.error('Location stream error', err);
+        // Fallback to polling or retry logic could be added here if needed
+      }
     });
   }
 }

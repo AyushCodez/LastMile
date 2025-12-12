@@ -1,94 +1,74 @@
 import { Injectable } from '@angular/core';
-import { DriverServiceClient } from '../../proto/driver_pb_service';
-import { RegisterDriverRequest, DriverProfile, RegisterRouteRequest, RoutePlan, DriverId, RouteStop } from '../../proto/driver_pb';
-import { UserId } from '../../proto/common_pb';
+import { DriverServiceClientImpl, RegisterDriverRequest, DriverProfile, RegisterRouteRequest, UpdateRouteRequest, UpdatePickupRequest, DriverId, RoutePlan, RouteStop } from '../../proto/driver';
+import { UserId } from '../../proto/common';
+import { Observable, from } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { AuthService } from '../core/auth/auth.service';
-import { Observable } from 'rxjs';
-import { map, switchMap } from 'rxjs/operators';
+import { GrpcWebRpc } from '../core/grpc/grpc-web-rpc';
+import { GRPC_URL } from '../core/grpc/grpc-clients.module';
 
 @Injectable({
     providedIn: 'root'
 })
 export class DriverGrpcService {
 
-    constructor(
-        private driverClient: DriverServiceClient,
-        private authService: AuthService
-    ) { }
+    private driverClient: DriverServiceClientImpl;
 
-    registerDriver(vehicleNo: string, capacity: number, model: string, color: string): Observable<DriverProfile.AsObject> {
-        const userId = this.authService.getUserId();
-        if (!userId) throw new Error('User ID not found');
-
-        const req = new RegisterDriverRequest();
-        req.setUserId(userId);
-        req.setVehicleNo(vehicleNo);
-        req.setCapacity(capacity);
-        req.setModel(model);
-        req.setColor(color);
-
-        return new Observable<DriverProfile>((observer) => {
-            this.driverClient.registerDriver(req, this.authService.getMetadata(), (err, res) => {
-                if (err) observer.error(err);
-                else if (res) {
-                    observer.next(res);
-                    observer.complete();
-                }
-            });
-        }).pipe(map(res => res.toObject()));
+    constructor(private authService: AuthService) {
+        const rpc = new GrpcWebRpc(GRPC_URL);
+        this.driverClient = new DriverServiceClientImpl(rpc);
     }
 
-    getDriverProfile(): Observable<DriverProfile.AsObject> {
-        const userIdStr = this.authService.getUserId();
-        if (!userIdStr) throw new Error('User ID not found');
+    registerDriver(userId: string, vehicleNo: string, capacity: number, model: string, color: string): Observable<DriverProfile> {
+        const req: RegisterDriverRequest = {
+            userId,
+            vehicleNo,
+            capacity,
+            model,
+            color
+        };
 
-        const req = new UserId();
-        req.setId(userIdStr);
-
-        return new Observable<DriverProfile>((observer) => {
-            this.driverClient.getDriverByUserId(req, this.authService.getMetadata(), (err, res) => {
-                if (err) observer.error(err);
-                else if (res) {
-                    observer.next(res);
-                    observer.complete();
-                }
-            });
-        }).pipe(map(res => res.toObject()));
+        return from(this.driverClient.RegisterDriver(req));
     }
 
-    getDriverById(driverId: string): Observable<DriverProfile.AsObject> {
-        const req = new DriverId();
-        req.setId(driverId);
-
-        return new Observable<DriverProfile>((observer) => {
-            this.driverClient.getDriver(req, this.authService.getMetadata(), (err, res) => {
-                if (err) observer.error(err);
-                else if (res) {
-                    observer.next(res);
-                    observer.complete();
-                }
-            });
-        }).pipe(map(res => res.toObject()));
+    getDriverProfile(driverId: string): Observable<DriverProfile> {
+        const req: DriverId = { id: driverId };
+        return from(this.driverClient.GetDriver(req));
     }
 
-    registerRoute(stops: RouteStop[]): Observable<RoutePlan.AsObject> {
-        return this.getDriverProfile().pipe(
-            switchMap((profile: DriverProfile.AsObject) => {
-                const req = new RegisterRouteRequest();
-                req.setDriverId(profile.driverId);
-                req.setStopsList(stops);
+    getDriverByUserId(userId: string): Observable<DriverProfile> {
+        const req: UserId = { id: userId };
+        return from(this.driverClient.GetDriverByUserId(req));
+    }
 
-                return new Observable<RoutePlan>((observer) => {
-                    this.driverClient.registerRoute(req, this.authService.getMetadata(), (err, res) => {
-                        if (err) observer.error(err);
-                        else if (res) {
-                            observer.next(res);
-                            observer.complete();
-                        }
-                    });
-                });
-            }),
-            map(res => res.toObject())
+    registerRoute(driverId: string, stops: RouteStop[]): Observable<RoutePlan> {
+        const req: RegisterRouteRequest = {
+            driverId,
+            stops
+        };
+
+        return from(this.driverClient.RegisterRoute(req));
+    }
+
+    updateRoute(driverId: string, routeId: string, stops: RouteStop[]): Observable<RoutePlan> {
+        const req: UpdateRouteRequest = {
+            driverId,
+            routeId,
+            stops
+        };
+
+        return from(this.driverClient.UpdateRoute(req));
+    }
+
+    updatePickup(driverId: string, routeId: string, pickingUp: boolean): Observable<boolean> {
+        const req: UpdatePickupRequest = {
+            driverId,
+            routeId,
+            pickingUp
+        };
+
+        return from(this.driverClient.UpdatePickupStatus(req)).pipe(
+            map(res => res.ok)
         );
     }
 }

@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AuthService } from '../../core/auth/auth.service';
 import { Router } from '@angular/router';
-import { CreateUserRequest } from '../../../proto/user_pb';
+import { CreateUserRequest, CreateUserRequest_Role } from '../../../proto/user';
 
 @Component({
   selector: 'app-signup',
@@ -30,16 +30,12 @@ export class SignupComponent {
     if (this.signupForm.valid) {
       const { name, email, password, role } = this.signupForm.value;
 
-      const req = new CreateUserRequest();
-      req.setName(name);
-      req.setEmail(email);
-      req.setPassword(password);
-
-      if (role === 'DRIVER') {
-        req.setRole(CreateUserRequest.Role.DRIVER);
-      } else {
-        req.setRole(CreateUserRequest.Role.RIDER);
-      }
+      const req: CreateUserRequest = {
+        name,
+        email,
+        password,
+        role: role === 'DRIVER' ? CreateUserRequest_Role.DRIVER : CreateUserRequest_Role.RIDER
+      };
 
       this.authService.signup(req).subscribe({
         next: (res) => {

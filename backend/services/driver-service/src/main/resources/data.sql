@@ -1,0 +1,1 @@
+insert into drivers(driver_id, user_id, vehicle_no, capacity, model, color) values ('driver-ayush-123', 'user-ayush-123', 'KA-01-AB-1234', 4, 'Toyota Camry', 'Silver') on conflict (driver_id) do nothing;

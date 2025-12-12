@@ -31,7 +31,8 @@ public class GrpcTripService extends TripServiceGrpc.TripServiceImplBase {
         request.getStationAreaId(),
         request.getDestinationAreaId(),
         request.getRiderIdsList().stream().distinct().toList(),
-        sched);
+        sched,
+        request.getPassengerCount());
     repo.save(t);
     System.out.println("Trip saved to DB with ID: " + t.getTripId());
     
@@ -46,6 +47,7 @@ public class GrpcTripService extends TripServiceGrpc.TripServiceImplBase {
           .setTitle("Trip Created")
           .setBody("Trip " + t.getTripId() + " has been created.")
           .putMetadata("tripId", t.getTripId())
+          .putMetadata("passengerCount", String.valueOf(t.getPassengerCount()))
           .build());
     } catch (Exception e) {
         System.err.println("Failed to notify driver: " + e.getMessage());
@@ -125,37 +127,51 @@ public class GrpcTripService extends TripServiceGrpc.TripServiceImplBase {
 
   @Override
   public void getTrips(lastmile.trip.GetTripsRequest request, StreamObserver<lastmile.trip.GetTripsResponse> responseObserver) {
-    java.util.List<Trip> trips;
-    if (!request.getDriverId().isEmpty()) {
-      trips = repo.findByDriverId(request.getDriverId());
-    } else if (!request.getRiderId().isEmpty()) {
-      trips = repo.findByRiderUserIdsContaining(request.getRiderId());
-    } else {
-      trips = java.util.Collections.emptyList();
+    try {
+        java.util.List<Trip> trips;
+        if (!request.getDriverId().isEmpty()) {
+          trips = repo.findByDriverId(request.getDriverId());
+        } else if (!request.getRiderId().isEmpty()) {
+          trips = repo.findByRiderUserIdsContaining(request.getRiderId());
+        } else {
+          trips = java.util.Collections.emptyList();
+        }
+        
+        lastmile.trip.GetTripsResponse response = lastmile.trip.GetTripsResponse.newBuilder()
+            .addAllTrips(trips.stream().map(this::toProto).toList())
+            .build();
+        responseObserver.onNext(response);
+        responseObserver.onCompleted();
+    } catch (Exception e) {
+        System.err.println("Error in getTrips: " + e.getMessage());
+        e.printStackTrace();
+        responseObserver.onError(io.grpc.Status.INTERNAL.withDescription("Internal error getting trips").withCause(e).asRuntimeException());
     }
-    
-    lastmile.trip.GetTripsResponse response = lastmile.trip.GetTripsResponse.newBuilder()
-        .addAllTrips(trips.stream().map(this::toProto).toList())
-        .build();
-    responseObserver.onNext(response);
-    responseObserver.onCompleted();
   }
 
   private lastmile.trip.Trip toProto(Trip t) {
-    Timestamp departure = toTimestamp(t.getScheduledDeparture());
-    lastmile.trip.Trip.Builder builder = lastmile.trip.Trip.newBuilder()
-        .setTripId(t.getTripId())
-        .setDriverId(t.getDriverId())
-        .setRouteId(t.getRouteId() == null ? "" : t.getRouteId())
-        .setStationAreaId(t.getStationAreaId())
-        .setDestinationAreaId(t.getDestinationAreaId())
-        .setStatus(t.getStatus())
-        .setScheduledDeparture(departure)
-        .addAllRiderIds(t.getRiderUserIds());
-    return builder.build();
+    try {
+        Timestamp departure = t.getScheduledDeparture() != null ? toTimestamp(t.getScheduledDeparture()) : Timestamp.getDefaultInstance();
+        lastmile.trip.Trip.Builder builder = lastmile.trip.Trip.newBuilder()
+            .setTripId(t.getTripId())
+            .setDriverId(t.getDriverId())
+            .setRouteId(t.getRouteId() == null ? "" : t.getRouteId())
+            .setStationAreaId(t.getStationAreaId() == null ? "" : t.getStationAreaId())
+            .setDestinationAreaId(t.getDestinationAreaId() == null ? "" : t.getDestinationAreaId())
+            .setStatus(t.getStatus() == null ? "UNKNOWN" : t.getStatus())
+            .setScheduledDeparture(departure)
+            .addAllRiderIds(t.getRiderUserIds() != null ? t.getRiderUserIds() : java.util.Collections.emptyList())
+            .setPassengerCount(t.getPassengerCount());
+        return builder.build();
+    } catch (Exception e) {
+        System.err.println("Error converting Trip to Proto: " + e.getMessage() + " TripID: " + t.getTripId());
+        e.printStackTrace();
+        throw e;
+    }
   }
 
   private Timestamp toTimestamp(Instant instant) {
+    if (instant == null) return Timestamp.getDefaultInstance();
     return Timestamp.newBuilder()
         .setSeconds(instant.getEpochSecond())
         .setNanos(instant.getNano())

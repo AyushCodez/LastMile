@@ -12,6 +12,7 @@ import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatExpansionModule } from '@angular/material/expansion';
 
 import { RiderRoutingModule } from './rider-routing.module';
 import { DashboardComponent } from './dashboard/dashboard.component';
@@ -39,7 +40,8 @@ import { RiderProfileComponent } from './rider-profile/rider-profile.component';
     MatSnackBarModule,
     MatDatepickerModule,
     MatNativeDateModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    MatExpansionModule
   ]
 })
 export class RiderModule { }

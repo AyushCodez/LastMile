@@ -41,6 +41,7 @@ public class GrpcLocationService extends LocationServiceGrpc.LocationServiceImpl
   private final Map<String, CachedRoute> routeCache = new ConcurrentHashMap<>();
   private final Map<String, Integer> driverCapacityCache = new ConcurrentHashMap<>();
   private final Map<String, TriggerState> lastTriggerByStation = new ConcurrentHashMap<>();
+  private final Map<String, java.util.Set<StreamObserver<DriverSnapshot>>> activeStreams = new ConcurrentHashMap<>();
 
   @GrpcClient("driver-service")
   private DriverServiceGrpc.DriverServiceBlockingStub driverClient;
@@ -101,6 +102,62 @@ public class GrpcLocationService extends LocationServiceGrpc.LocationServiceImpl
     
     responseObserver.onNext(Ack.newBuilder().setOk(true).setMsg("location updated").build());
     responseObserver.onCompleted();
+
+    broadcastUpdate(entity);
+  }
+
+  @Override
+  public void subscribeDriverUpdates(lastmile.location.DriverId request, StreamObserver<DriverSnapshot> responseObserver) {
+    String driverId = request.getId();
+    activeStreams.computeIfAbsent(driverId, k -> ConcurrentHashMap.newKeySet()).add(responseObserver);
+
+    // Send initial snapshot if available
+    repo.findByDriverId(driverId).ifPresent(entity -> {
+        try {
+            responseObserver.onNext(toSnapshot(entity));
+        } catch (Exception e) {
+            log.warn("Failed to send initial snapshot to subscriber for driver {}", driverId);
+            removeStream(driverId, responseObserver);
+        }
+    });
+
+    // We can't easily detect client disconnect without a proper context listener or using specific grpc features,
+    // but for simple cases, we just rely on onNext failing to remove the observer.
+    // However, providing a server-side streaming endpoint usually stays open until cancelled.
+    // A more robust approach uses Context.current().addListener or similar to remove on cancellation.
+  }
+
+  private void broadcastUpdate(DriverTelemetryEntity entity) {
+    String driverId = entity.getDriverId();
+    var streams = activeStreams.get(driverId);
+    if (streams != null && !streams.isEmpty()) {
+        DriverSnapshot snapshot = toSnapshot(entity);
+        streams.removeIf(observer -> {
+            try {
+                observer.onNext(snapshot);
+                return false;
+            } catch (Exception e) {
+                log.warn("Removing defunct observer for driver {}", driverId);
+                return true;
+            }
+        });
+    }
+  }
+
+  private void removeStream(String driverId, StreamObserver<DriverSnapshot> observer) {
+      if (activeStreams.containsKey(driverId)) {
+          activeStreams.get(driverId).remove(observer);
+      }
+  }
+
+  private DriverSnapshot toSnapshot(DriverTelemetryEntity entity) {
+      return DriverSnapshot.newBuilder()
+        .setDriverId(entity.getDriverId())
+        .setRouteId(entity.getRouteId() == null ? "" : entity.getRouteId())
+        .setCurrentAreaId(entity.getAreaId())
+        .setOccupancy(entity.getOccupancy())
+        .setTs(toTimestamp(entity.getTs()))
+        .build();
   }
 
   @Override

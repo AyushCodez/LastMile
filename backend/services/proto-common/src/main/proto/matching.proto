@@ -8,6 +8,7 @@ service MatchingService {
   rpc EvaluateDriver(EvaluateDriverRequest) returns (MatchResponse);
   rpc SubscribeMatches(SubscribeRequest) returns (stream MatchEvent);
   rpc AddRiderIntent(AddRiderIntentRequest) returns (AddRiderIntentResponse);
+  rpc CancelRideIntent(CancelRideIntentRequest) returns (CancelRideIntentResponse);
 }
 
 message EvaluateDriverRequest {
@@ -27,6 +28,7 @@ message MatchResult {
   string station_area_id = 3;
   string destination_area_id = 4;
   repeated string rider_ids = 5;
+  int32 passenger_count = 6;
 }
 
 message MatchResponse {
@@ -41,16 +43,30 @@ message MatchEvent {
   MatchResult result = 3;
 }
 
-message SubscribeRequest { string client_id = 1; }
+message SubscribeRequest {
+  string client_id = 1;
+  repeated string station_ids = 2;
+}
 
 message AddRiderIntentRequest {
   string rider_id = 1;
   string station_area_id = 2;
   string destination_area_id = 3;
   google.protobuf.Timestamp arrival_time = 4;
+  int32 party_size = 5;
 }
 
 message AddRiderIntentResponse {
+  bool success = 1;
+  string msg = 2;
+}
+
+message CancelRideIntentRequest {
+  string rider_id = 1;
+  string station_area_id = 2;
+}
+
+message CancelRideIntentResponse {
   bool success = 1;
   string msg = 2;
 }

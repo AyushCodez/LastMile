@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { DriverGrpcService } from '../driver-grpc.service';
-import { DriverProfile } from '../../../proto/driver_pb';
+import { DriverProfile } from '../../../proto/driver';
+import { AuthService } from '../../core/auth/auth.service';
 
 @Component({
   selector: 'app-driver-profile',
@@ -8,22 +9,30 @@ import { DriverProfile } from '../../../proto/driver_pb';
   styleUrls: ['./driver-profile.component.scss']
 })
 export class DriverProfileComponent implements OnInit {
-  profile: DriverProfile.AsObject | null = null;
+  profile: DriverProfile | null = null;
   loading = false;
 
-  constructor(private driverService: DriverGrpcService) { }
+  constructor(
+    private driverService: DriverGrpcService,
+    private authService: AuthService
+  ) { }
 
   ngOnInit(): void {
     this.loading = true;
-    this.driverService.getDriverProfile().subscribe({
-      next: (profile) => {
-        this.profile = profile;
-        this.loading = false;
-      },
-      error: (err) => {
-        console.error(err);
-        this.loading = false;
-      }
-    });
+    const userId = this.authService.getUserId();
+    if (userId) {
+      this.driverService.getDriverByUserId(userId).subscribe({
+        next: (profile) => {
+          this.profile = profile;
+          this.loading = false;
+        },
+        error: (err) => {
+          console.error(err);
+          this.loading = false;
+        }
+      });
+    } else {
+      this.loading = false;
+    }
   }
 }

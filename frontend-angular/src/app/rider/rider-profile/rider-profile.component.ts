@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { AuthService } from '../../core/auth/auth.service';
-import { UserProfile } from '../../../proto/user_pb';
+import { UserProfile } from '../../../proto/user';
 
 @Component({
   selector: 'app-rider-profile',
@@ -8,7 +8,7 @@ import { UserProfile } from '../../../proto/user_pb';
   styleUrls: ['./rider-profile.component.scss']
 })
 export class RiderProfileComponent implements OnInit {
-  profile: UserProfile.AsObject | null = null;
+  profile: UserProfile | null = null;
   loading = false;
 
   constructor(private authService: AuthService) { }

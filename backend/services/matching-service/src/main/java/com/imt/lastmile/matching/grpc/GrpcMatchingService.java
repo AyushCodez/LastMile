@@ -19,7 +19,17 @@ public class GrpcMatchingService extends MatchingServiceGrpc.MatchingServiceImpl
   @org.springframework.beans.factory.annotation.Autowired
   private RiderIntentStore riderStore;
   
-  private final List<StreamObserver<MatchEvent>> subscribers = new CopyOnWriteArrayList<>();
+  private static class Subscriber {
+    final StreamObserver<MatchEvent> observer;
+    final java.util.Set<String> stationIds;
+
+    Subscriber(StreamObserver<MatchEvent> observer, java.util.Set<String> stationIds) {
+      this.observer = observer;
+      this.stationIds = stationIds;
+    }
+  }
+
+  private final List<Subscriber> subscribers = new CopyOnWriteArrayList<>();
 
   @net.devh.boot.grpc.client.inject.GrpcClient("trip-service")
   private lastmile.trip.TripServiceGrpc.TripServiceBlockingStub tripClient;
@@ -50,27 +60,14 @@ public class GrpcMatchingService extends MatchingServiceGrpc.MatchingServiceImpl
       return;
     }
 
-    System.out.println("Matched " + riders.size() + " riders. Creating trip...");
+    System.out.println("Matched " + riders.size() + " riders. Returning potential match...");
 
-    // Call Trip Service to create trip
-    String tripId = "trip-" + UUID.randomUUID().toString().substring(0, 8);
-    try {
-      lastmile.trip.CreateTripRequest tripReq = lastmile.trip.CreateTripRequest.newBuilder()
-          .setDriverId(request.getDriverId())
-          .setRouteId(request.getRouteId())
-          .setStationAreaId(request.getStationAreaId())
-          .setDestinationAreaId(request.getDestinationAreaId())
-          .addAllRiderIds(riders.stream().map(RiderIntent::getRiderId).toList())
-          .setScheduledDeparture(request.getDriverLastUpdate()) // Approximate
-          .build();
-      System.out.println("Sending CreateTripRequest to TripService...");
-      lastmile.trip.Trip trip = tripClient.createTrip(tripReq);
-      tripId = trip.getTripId();
-      System.out.println("Trip created successfully. TripID: " + tripId);
-    } catch (Exception e) {
-      System.err.println("Failed to create trip in TripService: " + e.getMessage());
-      e.printStackTrace();
-    }
+    // Do NOT create trip automatically. Let driver accept first.
+    String tripId = ""; 
+
+    int totalPassengers = riders.stream().mapToInt(RiderIntent::getPartySize).sum();
+    // Fallback if partySize is 0 for some reason (backward compat)
+    if (totalPassengers == 0 && !riders.isEmpty()) totalPassengers = riders.size();
 
     MatchResult result = MatchResult.newBuilder()
       .setTripId(tripId)
@@ -78,6 +75,7 @@ public class GrpcMatchingService extends MatchingServiceGrpc.MatchingServiceImpl
       .setStationAreaId(request.getStationAreaId())
       .setDestinationAreaId(request.getDestinationAreaId())
       .addAllRiderIds(riders.stream().map(RiderIntent::getRiderId).toList())
+      .setPassengerCount(totalPassengers)
       .build();
     MatchResponse resp = MatchResponse.newBuilder()
       .setMatched(true)
@@ -87,44 +85,21 @@ public class GrpcMatchingService extends MatchingServiceGrpc.MatchingServiceImpl
     responseObserver.onNext(resp);
     responseObserver.onCompleted();
 
-    // Notify Driver
-    try {
-      System.out.println("Notifying driver " + request.getDriverId());
-      notificationClient.notify(lastmile.notification.Notification.newBuilder()
-          .setUserId(request.getDriverId()) // Assuming driverId maps to userId for notification
-          .setTitle("New Trip Assigned")
-          .setBody("You have been matched with " + riders.size() + " riders. Trip ID: " + tripId)
-          .putMetadata("tripId", tripId)
-          .build());
-    } catch (Exception e) {
-      System.err.println("Failed to notify driver: " + e.getMessage());
-    }
+    // Notify Driver (Optional: Frontend will handle this via response, but notification is good backup)
+    // Actually, if we don't create a trip, we shouldn't send "New Trip Assigned" notification yet.
+    // The frontend will show the match from the response.
+    // So we can skip notification here or send a "Potential Match" notification.
+    // For now, let's skip sending "New Trip Assigned" since no trip exists.
+    
+    // Notify Riders? No, not yet. Wait for driver to accept.
 
-    // Notify Riders
-    for (RiderIntent rider : riders) {
-      try {
-        System.out.println("Notifying rider " + rider.getRiderId());
-        notificationClient.notify(lastmile.notification.Notification.newBuilder()
-            .setUserId(rider.getRiderId())
-            .setTitle("Ride Matched")
-            .setBody("Your ride has been matched! Driver is on the way.")
-            .putMetadata("tripId", tripId)
-            .putMetadata("driverId", request.getDriverId())
-            .build());
-      } catch (Exception e) {
-        System.err.println("Failed to notify rider: " + e.getMessage());
-      }
-    }
-
-    // Broadcast event to subscribers
+    // Broadcast event to subscribers (filtered)
     MatchEvent event = MatchEvent.newBuilder()
-      .setEventId("evt-" + UUID.randomUUID().toString().substring(0, 8))
+      .setEventId("match-found-" + UUID.randomUUID().toString().substring(0, 8))
       .setStationAreaId(request.getStationAreaId())
       .setResult(result)
       .build();
-    subscribers.forEach(sub -> {
-      try { sub.onNext(event); } catch (Exception ignored) { }
-    });
+    broadcastEvent(event);
   }
 
   @Override
@@ -135,7 +110,8 @@ public class GrpcMatchingService extends MatchingServiceGrpc.MatchingServiceImpl
         request.getStationAreaId(),
         request.getDestinationAreaId(),
         java.time.Instant.now(),
-        arrivalTime
+        arrivalTime,
+        request.getPartySize()
     );
     riderStore.add(intent);
     
@@ -148,24 +124,50 @@ public class GrpcMatchingService extends MatchingServiceGrpc.MatchingServiceImpl
           .setDestinationAreaId(request.getDestinationAreaId())
           .build()) // Include params for filtering
       .build();
-    subscribers.forEach(sub -> {
-      try { sub.onNext(event); } catch (Exception ignored) { }
-    });
-    System.out.println("Broadcasted new-rider event to " + subscribers.size() + " subscribers for station: " + request.getStationAreaId());
-
+    
+    broadcastEvent(event);
+    
     responseObserver.onNext(lastmile.matching.AddRiderIntentResponse.newBuilder().setSuccess(true).setMsg("Intent added").build());
     responseObserver.onCompleted();
   }
 
   @Override
   public void subscribeMatches(SubscribeRequest request, StreamObserver<MatchEvent> responseObserver) {
-    System.out.println("Received subscribeMatches request from client: " + request.getClientId());
-    subscribers.add(responseObserver);
+    System.out.println("Received subscribeMatches request from client: " + request.getClientId() + " with stations: " + request.getStationIdsList());
+    subscribers.add(new Subscriber(responseObserver, new java.util.HashSet<>(request.getStationIdsList())));
+    
     // Remove subscriber when client terminates (best-effort)
     responseObserver.onNext(MatchEvent.newBuilder()
       .setEventId("welcome-" + UUID.randomUUID().toString().substring(0, 6))
       .setStationAreaId("")
       .build());
+  }
+
+  private void broadcastEvent(MatchEvent event) {
+    String stationId = event.getStationAreaId();
+    int sentCount = 0;
+    for (Subscriber sub : subscribers) {
+      // Filter: Only send if the subscriber is interested in this station
+      // If stationId is empty (e.g. welcome), send to all? Or maybe welcome is handled separately.
+      // If subscriber has no stations (e.g. global monitor), maybe send all?
+      // For now, strict filtering: must contain stationId.
+      if (sub.stationIds.contains(stationId) || stationId.isEmpty()) {
+        try {
+          sub.observer.onNext(event);
+          sentCount++;
+        } catch (Exception e) {
+          // Remove dead subscriber?
+          subscribers.remove(sub);
+        }
+      }
+    }
+    System.out.println("Broadcasted event " + event.getEventId() + " to " + sentCount + " subscribers (Total: " + subscribers.size() + ")");
+  }
+  @Override
+  public void cancelRideIntent(lastmile.matching.CancelRideIntentRequest request, StreamObserver<lastmile.matching.CancelRideIntentResponse> responseObserver) {
+    riderStore.remove(request.getRiderId(), request.getStationAreaId());
+    responseObserver.onNext(lastmile.matching.CancelRideIntentResponse.newBuilder().setSuccess(true).setMsg("Intent cancelled").build());
+    responseObserver.onCompleted();
   }
 }
 

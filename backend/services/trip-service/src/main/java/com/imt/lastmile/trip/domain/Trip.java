@@ -36,9 +36,12 @@ public class Trip {
   @Column(name = "rider_user_id")
   private List<String> riderUserIds = new ArrayList<>();
 
+  @Column(name = "passenger_count", nullable = false)
+  private int passengerCount;
+
   protected Trip() {}
 
-  public Trip(String driverId, String routeId, String stationAreaId, String destinationAreaId, List<String> riderUserIds, Instant scheduledDeparture) {
+  public Trip(String driverId, String routeId, String stationAreaId, String destinationAreaId, List<String> riderUserIds, Instant scheduledDeparture, int passengerCount) {
     this.tripId = UUID.randomUUID().toString();
     this.driverId = driverId;
     this.routeId = routeId;
@@ -47,6 +50,7 @@ public class Trip {
     this.scheduledDeparture = scheduledDeparture;
     this.status = "SCHEDULED";
     if (riderUserIds != null) this.riderUserIds.addAll(riderUserIds);
+    this.passengerCount = passengerCount > 0 ? passengerCount : (riderUserIds != null && !riderUserIds.isEmpty() ? riderUserIds.size() : 1);
   }
 
   public String getTripId() { return tripId; }
@@ -58,4 +62,5 @@ public class Trip {
   public void setStatus(String status) { this.status = status; }
   public Instant getScheduledDeparture() { return scheduledDeparture; }
   public List<String> getRiderUserIds() { return riderUserIds; }
+  public int getPassengerCount() { return passengerCount; }
 }

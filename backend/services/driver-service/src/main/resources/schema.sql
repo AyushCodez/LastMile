@@ -99,6 +99,8 @@ create table if not exists drivers (
   user_id varchar(36) not null,
   vehicle_no text not null,
   capacity int not null,
+  model text,
+  color text,
   created_at timestamptz not null default now()
 );
 

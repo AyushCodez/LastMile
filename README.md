@@ -8,7 +8,7 @@ LastMile is a microservices-based application for last-mile trip matching, conne
 - **Real-time Matching**: Efficiently matches riders with drivers based on location, ETA, and intent.
 - **JWT Authentication**: Secure, stateless authentication across all services.
 - **Real-time Updates**: Live location tracking and status updates.
-- **Infrastructure**: Containerized with Docker, orchestrated with Kubernetes (optional), and uses PostgreSQL (with PostGIS) and Redis.
+- **Infrastructure**: Containerized with Docker, orchestrated with Kubernetes (optional), and uses PostgreSQL and Redis.
 
 ## Architecture & Services
 
@@ -41,10 +41,6 @@ Services are configured via `application.properties` but can be overridden with 
 - `JWT_SECRET`: **Required**. Set a strong random secret (>=32 chars).
 - `DB_URL`: JDBC URL (default: `jdbc:postgresql://localhost:5432/lastmile`)
 - `DB_USER` / `DB_PASSWORD`: Database credentials (default: `postgres`/`postgres`).
-
-### Profiles
-- `local`: For development (uses `application-local.properties`).
-- `prod`: Production settings (secure defaults).
 
 **Setup for Local Development:**
 1. Copy `backend/services/user-service/src/main/resources/application-local.properties.example` to `backend/services/user-service/src/main/resources/application-local.properties`.
